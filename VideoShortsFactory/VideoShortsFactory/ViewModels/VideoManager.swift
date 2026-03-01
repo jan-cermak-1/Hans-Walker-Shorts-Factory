@@ -29,19 +29,45 @@ class VideoManager: ObservableObject {
     // MARK: - Persistence
 
     func saveSettings() {
-        UserDefaults.standard.set(globalConfiguration.quantity, forKey: "clipQuantity")
-        UserDefaults.standard.set(globalConfiguration.duration, forKey: "clipDuration")
-        UserDefaults.standard.set(globalConfiguration.baseTitle, forKey: "clipBaseTitle")
-        UserDefaults.standard.set(globalConfiguration.hashtags, forKey: "clipHashtags")
+        let ud = UserDefaults.standard
+        ud.set(globalConfiguration.quantity, forKey: "clipQuantity")
+        ud.set(globalConfiguration.duration, forKey: "clipDuration")
+        ud.set(globalConfiguration.baseTitle, forKey: "clipBaseTitle")
+        ud.set(globalConfiguration.hashtags, forKey: "clipHashtags")
+        ud.set(globalConfiguration.selectionMode.rawValue, forKey: "selectionMode")
+        ud.set(globalConfiguration.resolution.rawValue, forKey: "resolution")
+        ud.set(globalConfiguration.bitrate.rawValue, forKey: "bitrate")
+        ud.set(globalConfiguration.includeAudio, forKey: "includeAudio")
+        ud.set(globalConfiguration.namingTemplate, forKey: "namingTemplate")
     }
 
     private func loadSettings() {
-        let q = UserDefaults.standard.integer(forKey: "clipQuantity")
-        let d = UserDefaults.standard.integer(forKey: "clipDuration")
+        let ud = UserDefaults.standard
+        let q = ud.integer(forKey: "clipQuantity")
+        let d = ud.integer(forKey: "clipDuration")
         globalConfiguration.quantity = q > 0 ? q : 10
         globalConfiguration.duration = d > 0 ? d : 30
-        globalConfiguration.baseTitle = UserDefaults.standard.string(forKey: "clipBaseTitle") ?? ""
-        globalConfiguration.hashtags = UserDefaults.standard.string(forKey: "clipHashtags") ?? ""
+        globalConfiguration.baseTitle = ud.string(forKey: "clipBaseTitle") ?? ""
+        globalConfiguration.hashtags = ud.string(forKey: "clipHashtags") ?? ""
+
+        if let mode = ud.string(forKey: "selectionMode"),
+           let parsed = ClipSelectionMode(rawValue: mode) {
+            globalConfiguration.selectionMode = parsed
+        }
+        if let res = ud.string(forKey: "resolution"),
+           let parsed = OutputResolution(rawValue: res) {
+            globalConfiguration.resolution = parsed
+        }
+        if let br = ud.string(forKey: "bitrate"),
+           let parsed = VideoBitrate(rawValue: br) {
+            globalConfiguration.bitrate = parsed
+        }
+        if ud.object(forKey: "includeAudio") != nil {
+            globalConfiguration.includeAudio = ud.bool(forKey: "includeAudio")
+        }
+        if let tmpl = ud.string(forKey: "namingTemplate"), !tmpl.isEmpty {
+            globalConfiguration.namingTemplate = tmpl
+        }
     }
 
     func saveOutputFolder() {

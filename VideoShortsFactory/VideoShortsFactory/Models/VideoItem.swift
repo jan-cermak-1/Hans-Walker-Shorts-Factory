@@ -18,6 +18,12 @@ class VideoItem: Identifiable {
     var baseTitle: String = ""
     var hashtags: String = ""
     var outputFolder: URL?
+    var selectionMode: ClipSelectionMode = .random
+    var resolution: OutputResolution = .hd1080
+    var bitrate: VideoBitrate = .high
+    var includeAudio: Bool = true
+    var namingTemplate: String = "{name}_clip_{clip}"
+    var hasCustomConfig: Bool = false
     
     var durationSeconds: Double?
     var videoWidth: Double?
@@ -41,7 +47,12 @@ class VideoItem: Identifiable {
                 duration: clipDuration,
                 baseTitle: baseTitle,
                 hashtags: hashtags,
-                outputFolder: outputFolder
+                outputFolder: outputFolder,
+                selectionMode: selectionMode,
+                resolution: resolution,
+                bitrate: bitrate,
+                includeAudio: includeAudio,
+                namingTemplate: namingTemplate
             )
         }
         set {
@@ -50,6 +61,11 @@ class VideoItem: Identifiable {
             baseTitle = newValue.baseTitle
             hashtags = newValue.hashtags
             outputFolder = newValue.outputFolder
+            selectionMode = newValue.selectionMode
+            resolution = newValue.resolution
+            bitrate = newValue.bitrate
+            includeAudio = newValue.includeAudio
+            namingTemplate = newValue.namingTemplate
         }
     }
     

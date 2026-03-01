@@ -222,6 +222,7 @@ private struct SourceVideosSection: View {
 private struct VideoRow: View {
     let video: VideoItem
     @ObservedObject var videoManager: VideoManager
+    @State private var showOverride = false
 
     private var statusIcon: String {
         switch video.state {
@@ -256,6 +257,12 @@ private struct VideoRow: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
 
+                if video.hasCustomConfig {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
+
                 Spacer()
 
                 if video.state == .processing || video.state == .completed {
@@ -276,6 +283,16 @@ private struct VideoRow: View {
                     .frame(width: 50, alignment: .trailing)
 
                 Button {
+                    showOverride.toggle()
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.caption2)
+                        .foregroundColor(video.hasCustomConfig ? .orange : Color(nsColor: .tertiaryLabelColor))
+                }
+                .buttonStyle(.plain)
+                .disabled(videoManager.isProcessing)
+
+                Button {
                     videoManager.removeVideo(video)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
@@ -293,6 +310,12 @@ private struct VideoRow: View {
                     .lineLimit(1)
                     .padding(.leading, 24)
             }
+
+            if showOverride && !videoManager.isProcessing {
+                VideoOverridePanel(video: video, videoManager: videoManager)
+                    .padding(.leading, 24)
+                    .padding(.top, 4)
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -307,10 +330,74 @@ private struct VideoRow: View {
     }
 }
 
+private struct VideoOverridePanel: View {
+    let video: VideoItem
+    @ObservedObject var videoManager: VideoManager
+
+    var body: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Text("Clips")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Stepper("\(video.clipQuantity)", value: $videoQuantity, in: 1...50)
+                        .font(.caption2)
+                }
+
+                HStack(spacing: 4) {
+                    Text("Duration")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Stepper("\(video.clipDuration)s", value: $videoDuration, in: 5...60)
+                        .font(.caption2)
+                }
+
+                Spacer()
+
+                Button("Reset") {
+                    video.configuration = videoManager.globalConfiguration
+                    video.hasCustomConfig = false
+                    videoManager.objectWillChange.send()
+                }
+                .font(.caption2)
+                .buttonStyle(.plain)
+                .foregroundColor(.secondary)
+            }
+        }
+        .padding(6)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .cornerRadius(4)
+    }
+
+    private var videoQuantity: Binding<Int> {
+        Binding(
+            get: { video.clipQuantity },
+            set: {
+                video.clipQuantity = $0
+                video.hasCustomConfig = true
+                videoManager.objectWillChange.send()
+            }
+        )
+    }
+
+    private var videoDuration: Binding<Int> {
+        Binding(
+            get: { video.clipDuration },
+            set: {
+                video.clipDuration = $0
+                video.hasCustomConfig = true
+                videoManager.objectWillChange.send()
+            }
+        )
+    }
+}
+
 // MARK: - (2) Clip Settings
 
 private struct ClipSettingsSection: View {
     @ObservedObject var videoManager: VideoManager
+    @State private var showAdvanced = false
 
     var body: some View {
         WizardSection(
@@ -349,29 +436,108 @@ private struct ClipSettingsSection: View {
                     Spacer()
                 }
 
-                HStack(spacing: 16) {
-                    HStack(spacing: 6) {
-                        Text("Title")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .frame(width: 32, alignment: .leading)
-                        TextField("Optional title", text: titleBinding)
-                            .textFieldStyle(.roundedBorder)
-                            .font(.caption)
-                            .disabled(videoManager.isProcessing)
-                    }
+                HStack(spacing: 6) {
+                    Text("Title")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .frame(width: 50, alignment: .leading)
+                    TextField("Optional title", text: titleBinding)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.caption)
+                        .disabled(videoManager.isProcessing)
                 }
 
                 HStack(spacing: 6) {
                     Text("Tags")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .frame(width: 32, alignment: .leading)
+                        .frame(width: 50, alignment: .leading)
                     TextField("#shorts #fyp", text: hashtagsBinding)
                         .textFieldStyle(.roundedBorder)
                         .font(.caption)
                         .disabled(videoManager.isProcessing)
                 }
+
+                Divider()
+
+                DisclosureGroup("Advanced", isExpanded: $showAdvanced) {
+                    VStack(spacing: 8) {
+                        HStack(spacing: 16) {
+                            HStack(spacing: 6) {
+                                Text("Selection")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Picker("", selection: selectionModeBinding) {
+                                    ForEach(ClipSelectionMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.segmented)
+                                .frame(width: 140)
+                                .disabled(videoManager.isProcessing)
+                            }
+
+                            Spacer()
+                        }
+
+                        HStack(spacing: 16) {
+                            HStack(spacing: 6) {
+                                Text("Resolution")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Picker("", selection: resolutionBinding) {
+                                    ForEach(OutputResolution.allCases, id: \.self) { res in
+                                        Text(res.label).tag(res)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 80)
+                                .disabled(videoManager.isProcessing)
+                            }
+
+                            HStack(spacing: 6) {
+                                Text("Bitrate")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Picker("", selection: bitrateBinding) {
+                                    ForEach(VideoBitrate.allCases, id: \.self) { br in
+                                        Text(br.label).tag(br)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 90)
+                                .disabled(videoManager.isProcessing)
+                            }
+
+                            Toggle("Audio", isOn: audioBinding)
+                                .font(.caption)
+                                .toggleStyle(.checkbox)
+                                .disabled(videoManager.isProcessing)
+
+                            Spacer()
+                        }
+
+                        HStack(spacing: 6) {
+                            Text("Naming")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(width: 50, alignment: .leading)
+                            TextField("{name}_clip_{clip}", text: namingBinding)
+                                .textFieldStyle(.roundedBorder)
+                                .font(.system(.caption, design: .monospaced))
+                                .disabled(videoManager.isProcessing)
+                        }
+
+                        Text("Tokens: {name} {date} {clip}")
+                            .font(.caption2)
+                            .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                    .padding(.top, 6)
+                }
+                .font(.caption)
+                .foregroundColor(.secondary)
             }
         }
     }
@@ -379,49 +545,69 @@ private struct ClipSettingsSection: View {
     private var quantityBinding: Binding<Int> {
         Binding(
             get: { videoManager.globalConfiguration.quantity },
-            set: { newValue in
-                videoManager.globalConfiguration.quantity = newValue
-                videoManager.saveSettings()
-                syncConfigToVideos()
-            }
+            set: { videoManager.globalConfiguration.quantity = $0; save() }
         )
     }
 
     private var durationBinding: Binding<Int> {
         Binding(
             get: { videoManager.globalConfiguration.duration },
-            set: { newValue in
-                videoManager.globalConfiguration.duration = newValue
-                videoManager.saveSettings()
-                syncConfigToVideos()
-            }
+            set: { videoManager.globalConfiguration.duration = $0; save() }
         )
     }
 
     private var titleBinding: Binding<String> {
         Binding(
             get: { videoManager.globalConfiguration.baseTitle },
-            set: { newValue in
-                videoManager.globalConfiguration.baseTitle = newValue
-                videoManager.saveSettings()
-                syncConfigToVideos()
-            }
+            set: { videoManager.globalConfiguration.baseTitle = $0; save() }
         )
     }
 
     private var hashtagsBinding: Binding<String> {
         Binding(
             get: { videoManager.globalConfiguration.hashtags },
-            set: { newValue in
-                videoManager.globalConfiguration.hashtags = newValue
-                videoManager.saveSettings()
-                syncConfigToVideos()
-            }
+            set: { videoManager.globalConfiguration.hashtags = $0; save() }
         )
     }
 
-    private func syncConfigToVideos() {
-        for video in videoManager.videos {
+    private var selectionModeBinding: Binding<ClipSelectionMode> {
+        Binding(
+            get: { videoManager.globalConfiguration.selectionMode },
+            set: { videoManager.globalConfiguration.selectionMode = $0; save() }
+        )
+    }
+
+    private var resolutionBinding: Binding<OutputResolution> {
+        Binding(
+            get: { videoManager.globalConfiguration.resolution },
+            set: { videoManager.globalConfiguration.resolution = $0; save() }
+        )
+    }
+
+    private var bitrateBinding: Binding<VideoBitrate> {
+        Binding(
+            get: { videoManager.globalConfiguration.bitrate },
+            set: { videoManager.globalConfiguration.bitrate = $0; save() }
+        )
+    }
+
+    private var audioBinding: Binding<Bool> {
+        Binding(
+            get: { videoManager.globalConfiguration.includeAudio },
+            set: { videoManager.globalConfiguration.includeAudio = $0; save() }
+        )
+    }
+
+    private var namingBinding: Binding<String> {
+        Binding(
+            get: { videoManager.globalConfiguration.namingTemplate },
+            set: { videoManager.globalConfiguration.namingTemplate = $0; save() }
+        )
+    }
+
+    private func save() {
+        videoManager.saveSettings()
+        for video in videoManager.videos where !video.hasCustomConfig {
             video.configuration = videoManager.globalConfiguration
         }
     }

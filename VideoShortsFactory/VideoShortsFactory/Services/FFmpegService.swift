@@ -49,25 +49,46 @@ class FFmpegService {
             return
         }
         
+        let config = videoItem.configuration
         let maxStartTime = max(0, totalSeconds - Double(clipDuration))
-        let startTime = Double.random(in: 0...maxStartTime)
-        
-        let outputFileName = String(format: "%@_clip_%03d.mp4", 
-                                    videoItem.url.deletingPathExtension().lastPathComponent,
-                                    clipNumber)
+
+        let startTime: Double
+        switch config.selectionMode {
+        case .random:
+            startTime = Double.random(in: 0...maxStartTime)
+        case .uniform:
+            let totalClips = config.quantity
+            if totalClips <= 1 {
+                startTime = maxStartTime / 2
+            } else {
+                let interval = maxStartTime / Double(totalClips - 1)
+                startTime = interval * Double(clipNumber - 1)
+            }
+        }
+
+        let videoName = videoItem.url.deletingPathExtension().lastPathComponent
+        let outputFileName = config.resolveFileName(videoName: videoName, clipNumber: clipNumber) + ".mp4"
         let videoOutputURL = outputURL.appendingPathComponent(outputFileName)
-        
-        let arguments = [
+
+        let res = config.resolution
+        let vf = "crop=ih*9/16:ih,scale=\(res.width):\(res.height)"
+
+        var arguments = [
             "-ss", String(format: "%.2f", startTime),
             "-i", videoItem.url.path,
             "-t", "\(clipDuration)",
-            "-vf", "crop=ih*9/16:ih,scale=1080:1920",
+            "-vf", vf,
             "-c:v", "h264_videotoolbox",
-            "-b:v", "15M",
-            "-c:a", "copy",
-            "-y",
-            videoOutputURL.path
+            "-b:v", config.bitrate.rawValue
         ]
+
+        if config.includeAudio {
+            arguments += ["-c:a", "copy"]
+        } else {
+            arguments += ["-an"]
+        }
+
+        arguments += ["-y", videoOutputURL.path]
         
         print("Executing FFmpeg with arguments: \(arguments.joined(separator: " "))")
         
