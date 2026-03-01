@@ -50,7 +50,7 @@ class FFmpegService {
         }
         
         let maxStartTime = max(0, totalSeconds - Double(clipDuration))
-        let startTime = Double.random(in: 0...maxStartTime)
+        let videoStartTime = Double.random(in: 0...maxStartTime)
         
         let outputFileName = String(format: "%@_clip_%03d.mp4", 
                                     videoItem.url.deletingPathExtension().lastPathComponent,
@@ -58,7 +58,7 @@ class FFmpegService {
         let videoOutputURL = outputURL.appendingPathComponent(outputFileName)
         
         let arguments = [
-            "-ss", String(format: "%.2f", startTime),
+            "-ss", String(format: "%.2f", videoStartTime),
             "-i", videoItem.url.path,
             "-t", "\(clipDuration)",
             "-vf", "crop=ih*9/16:ih,scale=1080:1920",
@@ -69,8 +69,8 @@ class FFmpegService {
             videoOutputURL.path
         ]
         
-        let startTime = Date()
-        print("🎬 Starting clip \(clipNumber) from \(videoItem.fileName) at \(String(format: "%.2f", startTime))s")
+        let processingStartTime = Date()
+        print("🎬 Starting clip \(clipNumber) from \(videoItem.fileName) at \(String(format: "%.2f", videoStartTime))s")
         print("   FFmpeg: \(arguments.joined(separator: " "))")
         
         let process = Process()
@@ -105,7 +105,7 @@ class FFmpegService {
         process.terminationHandler = { process in
             errorPipe.fileHandleForReading.readabilityHandler = nil
             
-            let elapsed = Date().timeIntervalSince(startTime)
+            let elapsed = Date().timeIntervalSince(processingStartTime)
             
             // Stop accessing security-scoped resources
             if videoAccessStarted { videoItem.url.stopAccessingSecurityScopedResource() }
