@@ -1,0 +1,56 @@
+import SwiftUI
+
+@main
+struct VideoShortsFactoryApp: App {
+    
+    init() {
+        verifyFFmpegAvailability()
+    }
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .frame(minWidth: 900, minHeight: 600)
+        }
+        .windowStyle(.automatic)
+        .windowResizability(.contentSize)
+        .commands {
+            CommandGroup(after: .newItem) {
+                Button("Add Videos...") {
+                    NotificationCenter.default.post(name: NSNotification.Name("AddVideosAction"), object: nil)
+                }
+                .keyboardShortcut("o", modifiers: [.command])
+            }
+        }
+    }
+    
+    private func verifyFFmpegAvailability() {
+        let ffmpegService = FFmpegService.shared
+        
+        if ffmpegService.verifyFFmpegAvailability() {
+            print("✅ FFmpeg is available and ready to use")
+        } else {
+            print("⚠️ Warning: FFmpeg not found or not working properly")
+            DispatchQueue.main.async {
+                showFFmpegWarning()
+            }
+        }
+    }
+    
+    private func showFFmpegWarning() {
+        let alert = NSAlert()
+        alert.messageText = "FFmpeg Not Found"
+        alert.informativeText = """
+        FFmpeg binary was not found in the application bundle or system.
+        
+        The app requires FFmpeg to process videos. Please:
+        1. Install FFmpeg via Homebrew: brew install ffmpeg
+        2. Or add the FFmpeg binary to the app bundle
+        
+        The app may not work properly without FFmpeg.
+        """
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+}

@@ -1,0 +1,27 @@
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcbkptlist
+*.xcscheme
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# FFmpeg binary (too large for git)
+ffmpeg/
+VideoShortsFactory/VideoShortsFactory/Resources/ffmpeg
+
+# Cursor / IDE
+.cursor/
+.vscode/
+
+# Debug logs
+*.log
+
+# Old fix documentation
+README_FIXED.md
