@@ -406,6 +406,24 @@ private struct ClipSettingsSection: View {
             state: .ready
         ) {
             VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    ForEach(ConfigPreset.builtIn) { preset in
+                        Button {
+                            videoManager.applyPreset(preset)
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: preset.icon)
+                                Text(preset.name)
+                            }
+                            .font(.caption2)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.mini)
+                        .disabled(videoManager.isProcessing)
+                    }
+                    Spacer()
+                }
+
                 HStack(spacing: 16) {
                     HStack(spacing: 6) {
                         Text("Clips")
@@ -533,6 +551,20 @@ private struct ClipSettingsSection: View {
                             .font(.caption2)
                             .foregroundColor(Color(nsColor: .tertiaryLabelColor))
                             .frame(maxWidth: .infinity, alignment: .trailing)
+
+                        HStack(spacing: 6) {
+                            Text("Parallel jobs")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Stepper(
+                                "\(videoManager.concurrentJobs)",
+                                value: concurrentJobsBinding,
+                                in: 1...4
+                            )
+                            .font(.caption)
+                            .disabled(videoManager.isProcessing)
+                            Spacer()
+                        }
                     }
                     .padding(.top, 6)
                 }
@@ -602,6 +634,13 @@ private struct ClipSettingsSection: View {
         Binding(
             get: { videoManager.globalConfiguration.namingTemplate },
             set: { videoManager.globalConfiguration.namingTemplate = $0; save() }
+        )
+    }
+
+    private var concurrentJobsBinding: Binding<Int> {
+        Binding(
+            get: { videoManager.concurrentJobs },
+            set: { videoManager.concurrentJobs = $0; videoManager.saveSettings() }
         )
     }
 
@@ -805,42 +844,95 @@ private struct BatchActionSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Processing Complete")
                         .font(.headline)
-                    Text("\(videoManager.clipsCompleted) clips generated")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 8) {
+                        Text("\(videoManager.clipsCompleted) clips generated")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        if videoManager.clipsFailed > 0 {
+                            Text("\(videoManager.clipsFailed) failed")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
                 Spacer()
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button {
                     videoManager.openOutputFolder()
                 } label: {
-                    HStack {
+                    HStack(spacing: 4) {
                         Image(systemName: "folder")
-                        Text("Open Folder")
+                        Text("Open")
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .controlSize(.regular)
+                .controlSize(.small)
+
+                if videoManager.clipsFailed > 0 {
+                    Button {
+                        videoManager.retryFailed()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.clockwise")
+                            Text("Retry")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .tint(.orange)
+                }
+
+                Menu {
+                    Button("Export JSON") { exportJSON() }
+                    Button("Export CSV") { exportCSV() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Export")
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .menuStyle(.borderlessButton)
+                .frame(maxWidth: .infinity)
 
                 Button {
                     videoManager.startNewBatch()
                 } label: {
-                    HStack {
-                        Image(systemName: "arrow.counterclockwise")
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus.circle")
                         Text("New Batch")
                     }
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.regular)
+                .controlSize(.small)
             }
         }
         .padding(12)
         .background(Color.green.opacity(0.08))
         .cornerRadius(8)
+    }
+
+    private func exportJSON() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.json]
+        panel.nameFieldStringValue = "clips_metadata.json"
+        if panel.runModal() == .OK, let url = panel.url {
+            videoManager.exportMetadataJSON(to: url)
+        }
+    }
+
+    private func exportCSV() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "clips_metadata.csv"
+        if panel.runModal() == .OK, let url = panel.url {
+            videoManager.exportMetadataCSV(to: url)
+        }
     }
 }
 

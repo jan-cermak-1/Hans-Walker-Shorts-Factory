@@ -9,11 +9,14 @@ class VideoManager: ObservableObject {
     @Published var estimatedTimeRemaining: TimeInterval?
     @Published var totalClipsToGenerate: Int = 0
     @Published var clipsCompleted: Int = 0
+    @Published var clipsFailed: Int = 0
     @Published var currentOutputURL: URL?
     @Published var globalConfiguration: ClipConfiguration = ClipConfiguration()
     @Published var batchCompleted: Bool = false
     @Published var showErrorAlert: Bool = false
     @Published var errorMessage: String = ""
+    @Published var generatedClipPaths: [URL] = []
+    @Published var concurrentJobs: Int = 2
 
     private var isCancelled = false
     private var processingStartTime: Date?
@@ -39,6 +42,7 @@ class VideoManager: ObservableObject {
         ud.set(globalConfiguration.bitrate.rawValue, forKey: "bitrate")
         ud.set(globalConfiguration.includeAudio, forKey: "includeAudio")
         ud.set(globalConfiguration.namingTemplate, forKey: "namingTemplate")
+        ud.set(concurrentJobs, forKey: "concurrentJobs")
     }
 
     private func loadSettings() {
@@ -68,6 +72,8 @@ class VideoManager: ObservableObject {
         if let tmpl = ud.string(forKey: "namingTemplate"), !tmpl.isEmpty {
             globalConfiguration.namingTemplate = tmpl
         }
+        let jobs = ud.integer(forKey: "concurrentJobs")
+        concurrentJobs = jobs > 0 ? min(jobs, 4) : 2
     }
 
     func saveOutputFolder() {
@@ -108,6 +114,23 @@ class VideoManager: ObservableObject {
         }
     }
 
+    // MARK: - Presets
+
+    func applyPreset(_ preset: ConfigPreset) {
+        globalConfiguration.quantity = preset.quantity
+        globalConfiguration.duration = preset.duration
+        globalConfiguration.resolution = preset.resolution
+        globalConfiguration.bitrate = preset.bitrate
+        globalConfiguration.includeAudio = preset.includeAudio
+        saveSettings()
+
+        for video in videos where !video.hasCustomConfig {
+            video.configuration = globalConfiguration
+        }
+
+        objectWillChange.send()
+    }
+
     // MARK: - Video Management
 
     func removeVideo(_ video: VideoItem) {
@@ -118,9 +141,46 @@ class VideoManager: ObservableObject {
         videos.removeAll()
         batchCompleted = false
         clipsCompleted = 0
+        clipsFailed = 0
         totalClipsToGenerate = 0
         masterProgress = 0.0
         estimatedTimeRemaining = nil
+        generatedClipPaths.removeAll()
+    }
+
+    // MARK: - Export
+
+    func exportMetadataJSON(to url: URL) {
+        let items = generatedClipPaths.enumerated().map { idx, path -> [String: Any] in
+            [
+                "index": idx + 1,
+                "file": path.lastPathComponent,
+                "path": path.path,
+                "title": globalConfiguration.baseTitle.isEmpty
+                    ? "Clip \(idx + 1)"
+                    : "\(globalConfiguration.baseTitle) - Clip \(idx + 1)",
+                "hashtags": globalConfiguration.hashtags,
+                "resolution": globalConfiguration.resolution.rawValue,
+                "bitrate": globalConfiguration.bitrate.rawValue
+            ]
+        }
+
+        if let data = try? JSONSerialization.data(withJSONObject: items, options: .prettyPrinted) {
+            try? data.write(to: url)
+        }
+    }
+
+    func exportMetadataCSV(to url: URL) {
+        var csv = "index,file,title,hashtags,resolution,bitrate\n"
+        for (idx, path) in generatedClipPaths.enumerated() {
+            let title = globalConfiguration.baseTitle.isEmpty
+                ? "Clip \(idx + 1)"
+                : "\(globalConfiguration.baseTitle) - Clip \(idx + 1)"
+            let escaped = title.replacingOccurrences(of: "\"", with: "\"\"")
+            let tagsEscaped = globalConfiguration.hashtags.replacingOccurrences(of: "\"", with: "\"\"")
+            csv += "\(idx + 1),\(path.lastPathComponent),\"\(escaped)\",\"\(tagsEscaped)\",\(globalConfiguration.resolution.rawValue),\(globalConfiguration.bitrate.rawValue)\n"
+        }
+        try? csv.write(to: url, atomically: true, encoding: .utf8)
     }
 
     // MARK: - Processing
@@ -165,9 +225,11 @@ class VideoManager: ObservableObject {
         isCancelled = false
         processingStartTime = Date()
         clipProcessingTimes.removeAll()
+        generatedClipPaths.removeAll()
 
         totalClipsToGenerate = videos.reduce(0) { $0 + $1.configuration.quantity }
         clipsCompleted = 0
+        clipsFailed = 0
         masterProgress = 0.0
         currentOutputURL = outputURL
 
@@ -176,12 +238,42 @@ class VideoManager: ObservableObject {
             video.progress = 0.0
             video.currentClip = 0
             video.totalClips = video.configuration.quantity
+            video.errorMessage = nil
         }
 
         SleepPrevention.shared.beginActivity(reason: "Processing video shorts")
 
         Task {
-            await processVideosSequentially()
+            await processVideosWithConcurrency()
+        }
+    }
+
+    func retryFailed() {
+        let failedVideos = videos.filter { $0.state == .failed }
+        guard !failedVideos.isEmpty, let outputURL = globalConfiguration.outputFolder else { return }
+
+        batchCompleted = false
+        isProcessing = true
+        isCancelled = false
+        processingStartTime = Date()
+        clipProcessingTimes.removeAll()
+        currentOutputURL = outputURL
+
+        let retryClips = failedVideos.reduce(0) { $0 + $1.configuration.quantity }
+        totalClipsToGenerate = clipsCompleted + retryClips
+        clipsFailed = 0
+
+        for video in failedVideos {
+            video.state = .queued
+            video.progress = 0.0
+            video.currentClip = 0
+            video.errorMessage = nil
+        }
+
+        SleepPrevention.shared.beginActivity(reason: "Retrying failed video shorts")
+
+        Task {
+            await processVideosWithConcurrency(only: failedVideos)
         }
     }
 
@@ -189,7 +281,7 @@ class VideoManager: ObservableObject {
         guard isProcessing else { return }
 
         isCancelled = true
-        FFmpegService.shared.cancelCurrentProcess()
+        FFmpegService.shared.cancelAllProcesses()
 
         for video in videos where video.state == .processing || video.state == .queued {
             video.state = .cancelled
@@ -198,15 +290,30 @@ class VideoManager: ObservableObject {
         cleanupProcessing()
     }
 
-    private func processVideosSequentially() async {
-        for video in videos {
-            guard !isCancelled else { break }
+    private func processVideosWithConcurrency(only subset: [VideoItem]? = nil) async {
+        let videosToProcess = subset ?? videos
+        let semaphore = DispatchSemaphore(value: concurrentJobs)
 
-            video.state = .processing
+        await withTaskGroup(of: Void.self) { group in
+            for video in videosToProcess {
+                guard !isCancelled else { break }
 
-            await withCheckedContinuation { continuation in
-                processVideo(video) { _ in
-                    continuation.resume()
+                group.addTask { [weak self] in
+                    semaphore.wait()
+                    defer { semaphore.signal() }
+
+                    guard let self = self, !self.isCancelled else { return }
+
+                    await MainActor.run {
+                        video.state = .processing
+                        self.objectWillChange.send()
+                    }
+
+                    await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+                        self.processVideo(video) { _ in
+                            continuation.resume()
+                        }
+                    }
                 }
             }
         }
@@ -271,16 +378,20 @@ class VideoManager: ObservableObject {
                     }
 
                     switch result {
-                    case .success:
+                    case .success(let clipURL):
                         processedClips += 1
                         DispatchQueue.main.async {
                             self.clipsCompleted += 1
+                            self.generatedClipPaths.append(clipURL)
                             self.updateMasterProgress()
                             self.updateETA()
                         }
                         processNextClip()
 
                     case .failure(let error):
+                        DispatchQueue.main.async {
+                            self.clipsFailed += 1
+                        }
                         video.state = .failed
                         video.errorMessage = error.localizedDescription
                         completion(false)
@@ -301,25 +412,23 @@ class VideoManager: ObservableObject {
         guard let _ = processingStartTime else { return }
 
         let remainingClips = totalClipsToGenerate - clipsCompleted
-
         guard remainingClips > 0 else {
             estimatedTimeRemaining = 0
             return
         }
 
         let avgProcessingTime: TimeInterval
-
         if clipProcessingTimes.isEmpty {
             let avgClipDuration = videos.reduce(0.0) { sum, video in
                 sum + Double(video.configuration.duration)
             } / Double(videos.count)
-
             avgProcessingTime = avgClipDuration / initialSpeedFactor
         } else {
             avgProcessingTime = clipProcessingTimes.reduce(0, +) / Double(clipProcessingTimes.count)
         }
 
-        estimatedTimeRemaining = avgProcessingTime * Double(remainingClips)
+        let parallelFactor = Double(concurrentJobs)
+        estimatedTimeRemaining = (avgProcessingTime * Double(remainingClips)) / parallelFactor
     }
 
     private func cleanupProcessing() {

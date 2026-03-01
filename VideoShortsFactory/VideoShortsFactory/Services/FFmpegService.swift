@@ -5,7 +5,8 @@ class FFmpegService {
     
     static let shared = FFmpegService()
     
-    private var currentProcess: Process?
+    private var activeProcesses: [Process] = []
+    private let processLock = NSLock()
     private var ffmpegPath: String
     
     private init() {
@@ -100,7 +101,9 @@ class FFmpegService {
         process.standardError = errorPipe
         process.standardOutput = Pipe()
         
-        currentProcess = process
+        processLock.lock()
+        activeProcesses.append(process)
+        processLock.unlock()
         
         var lastProgress: Double = 0
         
@@ -119,10 +122,13 @@ class FFmpegService {
             }
         }
         
-        process.terminationHandler = { process in
+        process.terminationHandler = { [weak self] process in
             errorPipe.fileHandleForReading.readabilityHandler = nil
-            
-            // Stop accessing security-scoped resources
+
+            self?.processLock.lock()
+            self?.activeProcesses.removeAll { $0 === process }
+            self?.processLock.unlock()
+
             if videoAccessStarted { videoItem.url.stopAccessingSecurityScopedResource() }
             if outputAccessStarted { outputURL.stopAccessingSecurityScopedResource() }
             
@@ -157,8 +163,20 @@ class FFmpegService {
     }
     
     func cancelCurrentProcess() {
-        currentProcess?.terminate()
-        currentProcess = nil
+        cancelAllProcesses()
+    }
+
+    func cancelAllProcesses() {
+        processLock.lock()
+        let processes = activeProcesses
+        activeProcesses.removeAll()
+        processLock.unlock()
+
+        for process in processes {
+            if process.isRunning {
+                process.terminate()
+            }
+        }
     }
     
     private func parseProgress(from output: String, totalDuration: Double) -> Double? {

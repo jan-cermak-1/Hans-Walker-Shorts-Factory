@@ -94,3 +94,59 @@ struct ClipConfiguration: Codable {
             .replacingOccurrences(of: "{clip}", with: String(format: "%03d", clipNumber))
     }
 }
+
+// MARK: - Presets
+
+struct ConfigPreset: Identifiable {
+    let id: String
+    let name: String
+    let icon: String
+    let quantity: Int
+    let duration: Int
+    let resolution: OutputResolution
+    let bitrate: VideoBitrate
+    let includeAudio: Bool
+
+    static let builtIn: [ConfigPreset] = [
+        ConfigPreset(
+            id: "youtube-shorts",
+            name: "YouTube Shorts",
+            icon: "play.rectangle.fill",
+            quantity: 10,
+            duration: 59,
+            resolution: .hd1080,
+            bitrate: .high,
+            includeAudio: true
+        ),
+        ConfigPreset(
+            id: "tiktok",
+            name: "TikTok",
+            icon: "music.note",
+            quantity: 10,
+            duration: 30,
+            resolution: .hd1080,
+            bitrate: .medium,
+            includeAudio: true
+        ),
+        ConfigPreset(
+            id: "instagram-reels",
+            name: "Instagram Reels",
+            icon: "camera.fill",
+            quantity: 10,
+            duration: 30,
+            resolution: .hd1080,
+            bitrate: .high,
+            includeAudio: true
+        ),
+        ConfigPreset(
+            id: "fast-preview",
+            name: "Fast Preview",
+            icon: "hare.fill",
+            quantity: 5,
+            duration: 15,
+            resolution: .hd720,
+            bitrate: .low,
+            includeAudio: false
+        )
+    ]
+}
