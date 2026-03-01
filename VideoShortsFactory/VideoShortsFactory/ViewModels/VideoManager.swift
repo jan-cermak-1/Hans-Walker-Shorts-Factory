@@ -126,6 +126,13 @@ class VideoManager: ObservableObject {
         }
 
         SleepPrevention.shared.beginActivity(reason: "Processing video shorts")
+        
+        print("🚀 Starting batch processing:")
+        print("   • Source videos: \(videos.count)")
+        print("   • Clips per video: \(globalConfiguration.quantity)")
+        print("   • Total clips to generate: \(totalClipsToGenerate)")
+        print("   • Clip duration: \(globalConfiguration.duration)s")
+        print("   • Output folder: \(outputURL.path)")
 
         Task {
             await processVideosSequentially()
@@ -272,9 +279,34 @@ class VideoManager: ObservableObject {
 
         if !isCancelled && clipsCompleted > 0 {
             batchCompleted = true
+            
+            // Print batch statistics
+            if let startTime = processingStartTime {
+                let totalTime = Date().timeIntervalSince(startTime)
+                let avgTime = totalTime / Double(clipsCompleted)
+                print("📊 Batch Statistics:")
+                print("   • Total clips: \(clipsCompleted)")
+                print("   • Total time: \(String(format: "%.1f", totalTime))s (\(formatDuration(totalTime)))")
+                print("   • Average per clip: \(String(format: "%.2f", avgTime))s")
+                print("   • Processing speed: \(String(format: "%.1fx", Double(totalClipsToGenerate) * Double(globalConfiguration.duration) / totalTime)) realtime")
+            }
         }
 
         processingStartTime = nil
+    }
+    
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        if seconds < 60 {
+            return String(format: "%.0fs", seconds)
+        } else if seconds < 3600 {
+            let mins = Int(seconds / 60)
+            let secs = Int(seconds.truncatingRemainder(dividingBy: 60))
+            return "\(mins)m \(secs)s"
+        } else {
+            let hours = Int(seconds / 3600)
+            let mins = Int((seconds.truncatingRemainder(dividingBy: 3600)) / 60)
+            return "\(hours)h \(mins)m"
+        }
     }
 
     func openOutputFolder() {

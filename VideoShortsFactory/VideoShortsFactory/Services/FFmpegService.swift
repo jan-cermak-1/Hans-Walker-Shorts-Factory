@@ -69,7 +69,9 @@ class FFmpegService {
             videoOutputURL.path
         ]
         
-        print("Executing FFmpeg with arguments: \(arguments.joined(separator: " "))")
+        let startTime = Date()
+        print("🎬 Starting clip \(clipNumber) from \(videoItem.fileName) at \(String(format: "%.2f", startTime))s")
+        print("   FFmpeg: \(arguments.joined(separator: " "))")
         
         let process = Process()
         process.executableURL = URL(fileURLWithPath: ffmpegPath)
@@ -82,6 +84,7 @@ class FFmpegService {
         currentProcess = process
         
         var lastProgress: Double = 0
+        var progressUpdateCount = 0
         
         errorPipe.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
@@ -91,6 +94,7 @@ class FFmpegService {
             if let progress = self.parseProgress(from: output, totalDuration: Double(clipDuration)) {
                 if progress > lastProgress {
                     lastProgress = progress
+                    progressUpdateCount += 1
                     DispatchQueue.main.async {
                         progressCallback(progress)
                     }
@@ -101,12 +105,16 @@ class FFmpegService {
         process.terminationHandler = { process in
             errorPipe.fileHandleForReading.readabilityHandler = nil
             
+            let elapsed = Date().timeIntervalSince(startTime)
+            
             // Stop accessing security-scoped resources
             if videoAccessStarted { videoItem.url.stopAccessingSecurityScopedResource() }
             if outputAccessStarted { outputURL.stopAccessingSecurityScopedResource() }
             
             if process.terminationStatus == 0 {
-                self.createMetadataFile(
+                print("✅ Clip \(clipNumber) completed in \(String(format: "%.2f", elapsed))s (\(progressUpdateCount) progress updates)")
+                
+                self?.createMetadataFile(
                     for: videoOutputURL,
                     clipNumber: clipNumber,
                     configuration: videoItem.configuration
@@ -119,6 +127,8 @@ class FFmpegService {
                 let errorDescription = process.terminationReason == .exit 
                     ? "FFmpeg process failed with exit code \(process.terminationStatus)"
                     : "FFmpeg process was interrupted"
+                
+                print("❌ Clip \(clipNumber) failed after \(String(format: "%.2f", elapsed))s: \(errorDescription)")
                 
                 DispatchQueue.main.async {
                     completion(.failure(FFmpegError.processingFailed(errorDescription)))
