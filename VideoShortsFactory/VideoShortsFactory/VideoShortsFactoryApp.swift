@@ -12,8 +12,8 @@ struct VideoShortsFactoryApp: App {
             ContentView()
         }
         .windowStyle(.automatic)
-        .windowResizability(.contentSize)
-        .defaultSize(width: 520, height: 480)
+        .windowResizability(.contentMinSize)
+        .defaultSize(width: 500, height: 620)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Add Videos...") {
