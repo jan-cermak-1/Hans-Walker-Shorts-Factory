@@ -114,7 +114,7 @@ class FFmpegService {
             if process.terminationStatus == 0 {
                 print("✅ Clip \(clipNumber) completed in \(String(format: "%.2f", elapsed))s (\(progressUpdateCount) progress updates)")
                 
-                self?.createMetadataFile(
+                self.createMetadataFile(
                     for: videoOutputURL,
                     clipNumber: clipNumber,
                     configuration: videoItem.configuration
