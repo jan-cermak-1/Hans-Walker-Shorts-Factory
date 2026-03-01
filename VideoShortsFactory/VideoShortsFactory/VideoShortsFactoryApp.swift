@@ -23,6 +23,32 @@ struct VideoShortsFactoryApp: App {
                     )
                 }
                 .keyboardShortcut("o", modifiers: [.command])
+
+                Button("Clear All Videos") {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("ClearAllVideos"),
+                        object: nil
+                    )
+                }
+                .keyboardShortcut("k", modifiers: [.command, .shift])
+
+                Divider()
+
+                Button("Start Batch") {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("StartBatchAction"),
+                        object: nil
+                    )
+                }
+                .keyboardShortcut(.return, modifiers: [.command])
+
+                Button("Stop Processing") {
+                    NotificationCenter.default.post(
+                        name: NSNotification.Name("StopBatchAction"),
+                        object: nil
+                    )
+                }
+                .keyboardShortcut(.escape, modifiers: [])
             }
         }
     }

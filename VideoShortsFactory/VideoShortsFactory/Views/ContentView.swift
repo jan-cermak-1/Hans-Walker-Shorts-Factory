@@ -1,8 +1,11 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
+import UserNotifications
 
 struct ContentView: View {
     @StateObject private var videoManager = VideoManager()
+    @State private var isDragTargeted = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,9 +21,92 @@ struct ContentView: View {
         }
         .frame(width: 520, height: 480)
         .background(Color(nsColor: .windowBackgroundColor))
+        .overlay(dragOverlay)
+        .onDrop(of: [.movie, .mpeg4Movie, .quickTimeMovie, .fileURL], isTargeted: $isDragTargeted) { providers in
+            handleDrop(providers)
+            return true
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddVideosAction"))) { _ in
             guard !videoManager.isProcessing else { return }
             openFilePicker()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ClearAllVideos"))) { _ in
+            guard !videoManager.isProcessing else { return }
+            videoManager.videos.removeAll()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StartBatchAction"))) { _ in
+            videoManager.startBatchProcessing()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("StopBatchAction"))) { _ in
+            videoManager.stopProcessing()
+        }
+        .onChange(of: videoManager.batchCompleted) { completed in
+            if completed {
+                sendCompletionNotification()
+            }
+        }
+        .alert(
+            "Cannot Start Processing",
+            isPresented: $videoManager.showErrorAlert,
+            actions: { Button("OK") {} },
+            message: { Text(videoManager.errorMessage) }
+        )
+        .onAppear {
+            requestNotificationPermission()
+        }
+    }
+
+    @ViewBuilder
+    private var dragOverlay: some View {
+        if isDragTargeted && !videoManager.isProcessing {
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [8]))
+                .background(Color.accentColor.opacity(0.08))
+                .cornerRadius(8)
+                .overlay(
+                    VStack(spacing: 8) {
+                        Image(systemName: "arrow.down.doc.fill")
+                            .font(.largeTitle)
+                            .foregroundColor(.accentColor)
+                        Text("Drop video files here")
+                            .font(.headline)
+                            .foregroundColor(.accentColor)
+                    }
+                )
+                .padding(4)
+        }
+    }
+
+    private func handleDrop(_ providers: [NSItemProvider]) {
+        guard !videoManager.isProcessing else { return }
+
+        for provider in providers {
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { data, _ in
+                guard let data = data as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+
+                let ext = url.pathExtension.lowercased()
+                guard ext == "mp4" || ext == "mov" else { return }
+
+                DispatchQueue.main.async {
+                    addVideo(url: url)
+                }
+            }
+        }
+    }
+
+    private func addVideo(url: URL) {
+        guard !videoManager.videos.contains(where: { $0.url == url }) else { return }
+
+        let videoItem = VideoItem(url: url)
+        videoItem.configuration = videoManager.globalConfiguration
+        videoManager.videos.append(videoItem)
+
+        Task.detached(priority: .utility) { [weak videoManager] in
+            await VideoMetadataLoader.loadMetadata(for: videoItem)
+            await MainActor.run {
+                videoManager?.objectWillChange.send()
+            }
         }
     }
 
@@ -37,23 +123,26 @@ struct ContentView: View {
         guard response == .OK else { return }
 
         for url in panel.urls {
-            let ext = url.pathExtension.lowercased()
-            guard ext == "mp4" || ext == "mov" else { continue }
-            guard !videoManager.videos.contains(where: { $0.url == url }) else { continue }
-
-            let videoItem = VideoItem(url: url)
-            videoItem.configuration = videoManager.globalConfiguration
-            videoManager.videos.append(videoItem)
+            addVideo(url: url)
         }
+    }
 
-        for videoItem in videoManager.videos where videoItem.durationSeconds == nil {
-            Task.detached(priority: .utility) { [weak videoManager] in
-                await VideoMetadataLoader.loadMetadata(for: videoItem)
-                await MainActor.run {
-                    videoManager?.objectWillChange.send()
-                }
-            }
-        }
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    private func sendCompletionNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Video Shorts Factory"
+        content.body = "\(videoManager.clipsCompleted) clips generated successfully."
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 }
 
@@ -134,46 +223,76 @@ private struct VideoRow: View {
     let video: VideoItem
     @ObservedObject var videoManager: VideoManager
 
+    private var statusIcon: String {
+        switch video.state {
+        case .completed: return "checkmark.circle.fill"
+        case .failed: return "exclamationmark.circle.fill"
+        case .processing: return "circle.dotted"
+        case .queued: return "clock"
+        default: return "film"
+        }
+    }
+
+    private var statusColor: Color {
+        switch video.state {
+        case .completed: return .green
+        case .failed: return .red
+        case .processing: return .orange
+        case .queued: return .blue
+        default: return .secondary
+        }
+    }
+
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "film")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .frame(width: 16)
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Image(systemName: statusIcon)
+                    .font(.caption)
+                    .foregroundColor(statusColor)
+                    .frame(width: 16)
 
-            Text(video.fileName)
-                .font(.system(.caption, design: .monospaced))
-                .lineLimit(1)
-                .truncationMode(.middle)
+                Text(video.fileName)
+                    .font(.system(.caption, design: .monospaced))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
 
-            Spacer()
+                Spacer()
 
-            if video.state == .processing || video.state == .completed {
-                ProgressView(value: video.progress)
-                    .frame(width: 50)
-            }
+                if video.state == .processing || video.state == .completed {
+                    ProgressView(value: video.progress)
+                        .frame(width: 50)
+                }
 
-            if let dur = video.durationSeconds {
-                Text(formatDuration(dur))
+                if let dur = video.durationSeconds {
+                    Text(formatDuration(dur))
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .frame(width: 36, alignment: .trailing)
+                }
+
+                Text(video.fileSizeString)
                     .font(.caption2)
                     .foregroundColor(.secondary)
-                    .frame(width: 36, alignment: .trailing)
+                    .frame(width: 50, alignment: .trailing)
+
+                Button {
+                    videoManager.removeVideo(video)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.caption2)
+                        .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                }
+                .buttonStyle(.plain)
+                .disabled(videoManager.isProcessing)
             }
 
-            Text(video.fileSizeString)
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .frame(width: 50, alignment: .trailing)
-
-            Button {
-                videoManager.removeVideo(video)
-            } label: {
-                Image(systemName: "xmark.circle.fill")
+            if video.state == .failed, let error = video.errorMessage {
+                Text(error)
                     .font(.caption2)
-                    .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                    .foregroundColor(.red)
+                    .lineLimit(1)
+                    .padding(.leading, 24)
             }
-            .buttonStyle(.plain)
-            .disabled(videoManager.isProcessing)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)

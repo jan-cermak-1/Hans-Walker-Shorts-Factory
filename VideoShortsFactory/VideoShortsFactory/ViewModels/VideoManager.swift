@@ -12,6 +12,8 @@ class VideoManager: ObservableObject {
     @Published var currentOutputURL: URL?
     @Published var globalConfiguration: ClipConfiguration = ClipConfiguration()
     @Published var batchCompleted: Bool = false
+    @Published var showErrorAlert: Bool = false
+    @Published var errorMessage: String = ""
 
     private var isCancelled = false
     private var processingStartTime: Date?
@@ -99,13 +101,36 @@ class VideoManager: ObservableObject {
 
     func startBatchProcessing() {
         guard !isProcessing else { return }
-        guard !videos.isEmpty else { return }
 
-        guard let outputURL = globalConfiguration.outputFolder else { return }
+        guard !videos.isEmpty else {
+            errorMessage = "Add at least one video before starting."
+            showErrorAlert = true
+            return
+        }
+
+        guard let outputURL = globalConfiguration.outputFolder else {
+            errorMessage = "Please select an output folder first."
+            showErrorAlert = true
+            return
+        }
+
+        let tooShortVideos = videos.filter { video in
+            if let dur = video.durationSeconds {
+                return dur < Double(video.configuration.duration)
+            }
+            return false
+        }
+        if !tooShortVideos.isEmpty {
+            let names = tooShortVideos.map(\.fileName).joined(separator: ", ")
+            errorMessage = "These videos are shorter than the clip duration (\(globalConfiguration.duration)s): \(names)"
+            showErrorAlert = true
+            return
+        }
 
         let diskCheck = DiskSpaceChecker.shared.canProcessVideos(videos, at: outputURL)
         guard diskCheck.canProcess else {
-            print("Disk space check failed: \(diskCheck.message)")
+            errorMessage = diskCheck.message
+            showErrorAlert = true
             return
         }
 
