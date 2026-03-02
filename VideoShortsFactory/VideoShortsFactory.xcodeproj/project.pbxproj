@@ -22,6 +22,12 @@
 		AA0000190000000000000001 /* SleepPrevention.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001A0000000000000001 /* SleepPrevention.swift */; };
 		AA00001B0000000000000001 /* ffmpeg in Resources */ = {isa = PBXBuildFile; fileRef = AA00001C0000000000000001 /* ffmpeg */; };
 		AA00001F0000000000000001 /* VideoMetadataLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000200000000000000002 /* VideoMetadataLoader.swift */; };
+		AA0000210000000000000002 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000220000000000000002 /* DesignTokens.swift */; };
+		AA0000230000000000000002 /* ColorExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000240000000000000002 /* ColorExtensions.swift */; };
+		AA0000250000000000000002 /* HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000260000000000000002 /* HeaderView.swift */; };
+		AA0000270000000000000002 /* FooterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000280000000000000002 /* FooterView.swift */; };
+		AA0000290000000000000002 /* HansWalkerButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00002A0000000000000002 /* HansWalkerButton.swift */; };
+		AA00002B0000000000000002 /* KronaOne-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = AA00002C0000000000000002 /* KronaOne-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +49,12 @@
 		AA00001D0000000000000001 /* VideoShortsFactory.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VideoShortsFactory.entitlements; sourceTree = "<group>"; };
 		AA00001E0000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000200000000000000002 /* VideoMetadataLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataLoader.swift; sourceTree = "<group>"; };
+		AA0000220000000000000002 /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
+		AA0000240000000000000002 /* ColorExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtensions.swift; sourceTree = "<group>"; };
+		AA0000260000000000000002 /* HeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderView.swift; sourceTree = "<group>"; };
+		AA0000280000000000000002 /* FooterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FooterView.swift; sourceTree = "<group>"; };
+		AA00002A0000000000000002 /* HansWalkerButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HansWalkerButton.swift; sourceTree = "<group>"; };
+		AA00002C0000000000000002 /* KronaOne-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KronaOne-Regular.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +86,7 @@
 				AA0000250000000000000001 /* ViewModels */,
 				AA0000260000000000000001 /* Views */,
 				AA0000270000000000000001 /* Services */,
+				AA00002D0000000000000002 /* Utils */,
 				AA0000280000000000000001 /* Resources */,
 				AA0000060000000000000001 /* Assets.xcassets */,
 			);
@@ -113,6 +126,9 @@
 				AA0000100000000000000001 /* SourceTableView.swift */,
 				AA0000120000000000000001 /* ConfigurationPanel.swift */,
 				AA0000140000000000000001 /* DashboardView.swift */,
+				AA0000260000000000000002 /* HeaderView.swift */,
+				AA0000280000000000000002 /* FooterView.swift */,
+				AA00002E0000000000000002 /* Components */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -132,8 +148,34 @@
 			isa = PBXGroup;
 			children = (
 				AA00001C0000000000000001 /* ffmpeg */,
+				AA00002F0000000000000002 /* Fonts */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA00002D0000000000000002 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000220000000000000002 /* DesignTokens.swift */,
+				AA0000240000000000000002 /* ColorExtensions.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		AA00002E0000000000000002 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				AA00002A0000000000000002 /* HansWalkerButton.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		AA00002F0000000000000002 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				AA00002C0000000000000002 /* KronaOne-Regular.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -196,6 +238,7 @@
 			files = (
 				AA0000050000000000000001 /* Assets.xcassets in Resources */,
 				AA00001B0000000000000001 /* ffmpeg in Resources */,
+				AA00002B0000000000000002 /* KronaOne-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -219,6 +262,11 @@
 				AA0000170000000000000001 /* DiskSpaceChecker.swift in Sources */,
 				AA0000190000000000000001 /* SleepPrevention.swift in Sources */,
 				AA00001F0000000000000001 /* VideoMetadataLoader.swift in Sources */,
+				AA0000210000000000000002 /* DesignTokens.swift in Sources */,
+				AA0000230000000000000002 /* ColorExtensions.swift in Sources */,
+				AA0000250000000000000002 /* HeaderView.swift in Sources */,
+				AA0000270000000000000002 /* FooterView.swift in Sources */,
+				AA0000290000000000000002 /* HansWalkerButton.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

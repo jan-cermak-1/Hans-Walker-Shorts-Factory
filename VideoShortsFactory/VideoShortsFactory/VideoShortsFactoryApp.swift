@@ -1,19 +1,21 @@
 import SwiftUI
+import AppKit
 
 @main
 struct VideoShortsFactoryApp: App {
 
     init() {
         verifyFFmpegAvailability()
+        configureInitialWindowSize()
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .windowStyle(.automatic)
+        .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 500, height: 620)
+        .defaultSize(width: 540, height: 760)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Add Videos...") {
@@ -23,6 +25,22 @@ struct VideoShortsFactoryApp: App {
                     )
                 }
                 .keyboardShortcut("o", modifiers: [.command])
+            }
+        }
+    }
+    
+    private func configureInitialWindowSize() {
+        DispatchQueue.main.async {
+            if let screen = NSScreen.main {
+                let screenHeight = screen.visibleFrame.height
+                let idealHeight: CGFloat = 840
+                let maxHeight = screenHeight * 0.9
+                
+                // Použij 840px nebo 90% výšky obrazovky (co je menší)
+                let windowHeight = min(idealHeight, maxHeight)
+                
+                // Uložíme do UserDefaults pro příští spuštění
+                UserDefaults.standard.set(windowHeight, forKey: "preferredWindowHeight")
             }
         }
     }

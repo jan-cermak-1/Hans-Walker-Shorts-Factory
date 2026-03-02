@@ -3,30 +3,60 @@ import AppKit
 
 struct ContentView: View {
     @StateObject private var videoManager = VideoManager()
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            VStack(spacing: 10) {
-                sourceVideosCard
-                clipSettingsCard
-                outputCard
-
-                if videoManager.isProcessing {
-                    processingCard
-                } else if videoManager.batchCompleted {
-                    completionCard
-                } else {
-                    startBatchButton
+        VStack(spacing: 0) {
+            // Header - fixed at top
+            HeaderView()
+            
+            // Scrollable body - only cards
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(spacing: 10) {
+                    sourceVideosCard
+                    clipSettingsCard
+                    outputCard
                 }
+                .padding(14)
             }
-            .padding(14)
+            .background(Color.hwBackground(colorScheme))
+            
+            // Footer - fixed at bottom, dynamic content
+            FooterView(videoManager: videoManager)
         }
-        .frame(minWidth: 500, idealWidth: 500, maxWidth: 500)
+        .frame(width: 540)  // Fixní šířka
         .frame(minHeight: 520)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Color.hwBackground(colorScheme))
+        .onAppear {
+            configureWindowSize()
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AddVideosAction"))) { _ in
             guard !videoManager.isProcessing else { return }
             openFilePicker()
+        }
+    }
+    
+    private func configureWindowSize() {
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first else { return }
+            
+            if let screen = window.screen ?? NSScreen.main {
+                let screenHeight = screen.visibleFrame.height
+                let idealHeight: CGFloat = 840
+                let maxHeight = screenHeight * 0.9
+                
+                // Použij 840px nebo 90% výšky obrazovky (co je menší)
+                let targetHeight = min(idealHeight, maxHeight)
+                
+                // Nastav velikost okna
+                var frame = window.frame
+                frame.size.height = targetHeight
+                frame.size.width = 540
+                
+                // Vycentruj okno
+                window.setFrame(frame, display: true, animate: false)
+                window.center()
+            }
         }
     }
 
@@ -37,12 +67,12 @@ struct ContentView: View {
             VStack(spacing: 8) {
                 if videoManager.videos.isEmpty {
                     VStack(spacing: 5) {
-                        Text("🎬")
+                        Image(systemName: "film")
                             .font(.system(size: 32))
-                            .opacity(0.25)
+                            .foregroundColor(Color.hwTextSecondary(colorScheme).opacity(0.25))
                         Text("No videos added yet")
                             .font(.system(size: 12))
-                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            .foregroundColor(Color.hwTextSecondary(colorScheme).opacity(0.7))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 20)
@@ -62,84 +92,11 @@ struct ContentView: View {
     }
 
     private func videoRow(_ video: VideoItem) -> some View {
-        HStack(spacing: 9) {
-            Text("🎬")
-                .font(.system(size: 22))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(video.fileName)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(Color(nsColor: .labelColor))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-
-                Text("\(video.durationString) \u{00B7} \(video.fileSizeString)")
-                    .font(.system(size: 11))
-                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
-
-                if video.state == .processing || video.state == .completed {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color(nsColor: .separatorColor))
-                                .frame(height: 3)
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color(nsColor: .systemBlue))
-                                .frame(width: geo.size.width * video.progress, height: 3)
-                        }
-                    }
-                    .frame(width: 72, height: 3)
-                    .padding(.top, 4)
-                }
-            }
-
-            Spacer()
-
-            Button {
-                videoManager.removeVideo(video)
-            } label: {
-                Text("\u{2715}")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundColor(Color(nsColor: .tertiaryLabelColor))
-                    .frame(width: 18, height: 18)
-                    .background(Color(nsColor: .separatorColor).opacity(0.5))
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .disabled(videoManager.isProcessing)
-        }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 8)
-        .background(Color(nsColor: .controlBackgroundColor).opacity(0.5))
-        .cornerRadius(7)
-        .overlay(
-            RoundedRectangle(cornerRadius: 7)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
+        VideoRowView(video: video, videoManager: videoManager)
     }
 
     private var addVideosButton: some View {
-        Button {
-            openFilePicker()
-        } label: {
-            HStack(spacing: 5) {
-                Text("+")
-                    .font(.system(size: 14, weight: .medium))
-                Text("Add Videos")
-                    .font(.system(size: 13, weight: .medium))
-            }
-            .foregroundColor(Color(nsColor: .systemBlue))
-            .frame(maxWidth: .infinity)
-            .frame(height: 32)
-            .background(Color.clear)
-            .cornerRadius(7)
-            .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .stroke(Color(nsColor: .systemBlue).opacity(0.4), style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-            )
-        }
-        .buttonStyle(.plain)
-        .disabled(videoManager.isProcessing)
+        AddVideosButtonView(isProcessing: videoManager.isProcessing, action: openFilePicker)
     }
 
     // MARK: - (2) Clip Settings
@@ -207,14 +164,15 @@ struct ContentView: View {
     private var outputCard: some View {
         card(number: "3", title: "Output") {
             HStack(spacing: 10) {
-                Text("📁")
-                    .font(.system(size: 20))
+                Image(systemName: "folder.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(Color.hwText(colorScheme))
 
                 VStack(alignment: .leading, spacing: 2) {
                     if let folder = videoManager.globalConfiguration.outputFolder {
                         Text(folder.path)
                             .font(.system(size: 13))
-                            .foregroundColor(Color(nsColor: .labelColor))
+                            .foregroundColor(Color.hwText(colorScheme))
                             .lineLimit(1)
                             .truncationMode(.head)
 
@@ -222,27 +180,15 @@ struct ContentView: View {
                     } else {
                         Text("No output folder selected")
                             .font(.system(size: 13))
-                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                            .foregroundColor(Color.hwTextSecondary(colorScheme))
                     }
                 }
 
                 Spacer()
 
-                Button("Change") {
+                ChangeButtonView(isProcessing: videoManager.isProcessing) {
                     showFolderPicker = true
                 }
-                .font(.system(size: 12))
-                .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .cornerRadius(6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                )
-                .buttonStyle(.plain)
-                .disabled(videoManager.isProcessing)
             }
         }
         .fileImporter(
@@ -267,179 +213,8 @@ struct ContentView: View {
             )
             Text("Available: \(available) \u{00B7} Required: ~\(required)")
                 .font(.system(size: 11))
-                .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                .foregroundColor(Color.hwTextSecondary(colorScheme))
         }
-    }
-
-    // MARK: - Start Batch
-
-    private var startBatchButton: some View {
-        let canStart = !videoManager.videos.isEmpty
-            && videoManager.globalConfiguration.outputFolder != nil
-
-        return VStack(spacing: 0) {
-            Button {
-                videoManager.startBatchProcessing()
-            } label: {
-                HStack(spacing: 8) {
-                    Text("\u{25B6}")
-                        .font(.system(size: 11))
-                    Text("Start Batch")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundColor(canStart ? .white : Color(nsColor: .tertiaryLabelColor))
-                .frame(maxWidth: .infinity)
-                .frame(height: 42)
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(canStart ? Color(nsColor: .systemBlue) : Color(nsColor: .controlColor))
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(!canStart)
-
-            if videoManager.videos.isEmpty || videoManager.globalConfiguration.outputFolder == nil {
-                Group {
-                    if videoManager.videos.isEmpty {
-                        Text("\u{24D8} Add source videos to begin")
-                    } else {
-                        Text("\u{24D8} Select an output folder")
-                    }
-                }
-                .font(.system(size: 11))
-                .foregroundColor(Color(nsColor: .tertiaryLabelColor))
-                .padding(.top, 4)
-            }
-        }
-    }
-
-    // MARK: - (4) Processing
-
-    private var processingCard: some View {
-        card(number: "4", title: "Processing", badgeColor: Color(red: 245/255, green: 158/255, blue: 11/255)) {
-            VStack(spacing: 0) {
-                HStack {
-                    Text("\(videoManager.clipsCompleted) / \(videoManager.totalClipsToGenerate) clips done")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(nsColor: .labelColor))
-                    Spacer()
-                    Text("\(Int(videoManager.masterProgress * 100))%")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(nsColor: .systemBlue))
-                }
-                .padding(.bottom, 8)
-
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(nsColor: .separatorColor))
-                            .frame(height: 7)
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(nsColor: .systemBlue))
-                            .frame(width: max(0, geo.size.width * videoManager.masterProgress), height: 7)
-                    }
-                }
-                .frame(height: 7)
-                .padding(.bottom, 9)
-
-                HStack {
-                    HStack(spacing: 4) {
-                        ProgressView()
-                            .controlSize(.mini)
-                        Text("ETA: ~\(videoManager.estimatedTimeRemainingString)")
-                            .font(.system(size: 11))
-                            .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                    }
-
-                    Spacer()
-
-                    Button {
-                        videoManager.stopProcessing()
-                    } label: {
-                        Text("Stop")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundColor(Color(nsColor: .systemRed))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 5)
-                            .background(Color(nsColor: .systemRed).opacity(0.1))
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color(nsColor: .systemRed).opacity(0.25), lineWidth: 1)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    // MARK: - Completion
-
-    private var completionCard: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 8) {
-                Text("\u{2705}")
-                    .font(.system(size: 22))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Processing Complete")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(nsColor: .labelColor))
-                    Text("\(videoManager.clipsCompleted) clips generated")
-                        .font(.system(size: 11))
-                        .foregroundColor(Color(nsColor: .secondaryLabelColor))
-                }
-                Spacer()
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    videoManager.openOutputFolder()
-                } label: {
-                    HStack(spacing: 5) {
-                        Text("📂")
-                            .font(.system(size: 12))
-                        Text("Open Folder")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(Color(nsColor: .labelColor))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 34)
-                    .background(Color(nsColor: .controlBackgroundColor))
-                    .cornerRadius(7)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 7)
-                            .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    videoManager.startNewBatch()
-                } label: {
-                    HStack(spacing: 5) {
-                        Text("🔄")
-                            .font(.system(size: 12))
-                        Text("New Batch")
-                            .font(.system(size: 13, weight: .medium))
-                    }
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 34)
-                    .background(Color(nsColor: .systemBlue))
-                    .cornerRadius(7)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(12)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
-        .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 
     // MARK: - Card Container
@@ -447,7 +222,7 @@ struct ContentView: View {
     private func card<Content: View>(
         number: String,
         title: String,
-        badgeColor: Color = Color(nsColor: .systemBlue),
+        badgeColor: Color = Color.hwGreen,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(spacing: 0) {
@@ -461,26 +236,26 @@ struct ContentView: View {
 
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(Color(nsColor: .labelColor))
+                    .foregroundColor(Color.hwText(colorScheme))
 
                 Spacer()
             }
             .padding(.horizontal, 13)
             .padding(.vertical, 9)
-            .background(Color(nsColor: .controlBackgroundColor).opacity(0.3))
+            .background(Color.hwBackgroundMid(colorScheme).opacity(0.5))
 
             Divider()
-                .background(Color(nsColor: .separatorColor))
+                .background(Color.hwSeparator(colorScheme))
 
             content()
                 .padding(.horizontal, 13)
                 .padding(.vertical, 12)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.hwBackgroundMid(colorScheme))
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                .stroke(Color.hwSeparator(colorScheme), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
@@ -497,14 +272,14 @@ struct ContentView: View {
         TextField(placeholder, text: text)
             .textFieldStyle(.plain)
             .font(.system(size: 13))
-            .foregroundColor(Color(nsColor: .labelColor))
+            .foregroundColor(Color.hwText(colorScheme))
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .background(Color(nsColor: .controlBackgroundColor))
+            .background(Color.hwBackgroundDeep(colorScheme))
             .cornerRadius(7)
             .overlay(
                 RoundedRectangle(cornerRadius: 7)
-                    .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                    .stroke(Color.hwSeparator(colorScheme), lineWidth: 1)
             )
             .disabled(videoManager.isProcessing)
     }
@@ -514,7 +289,7 @@ struct ContentView: View {
     private func fieldLabel(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10.5, weight: .semibold))
-            .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+            .foregroundColor(Color.hwTextSecondary(colorScheme).opacity(0.7))
             .tracking(0.5)
     }
 
@@ -560,6 +335,133 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Video Row with Hover
+struct VideoRowView: View {
+    let video: VideoItem
+    let videoManager: VideoManager
+    
+    @Environment(\.colorScheme) var colorScheme
+    @State private var removeHovered = false
+    
+    var body: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "film.fill")
+                .font(.system(size: 20))
+                .foregroundColor(Color.hwText(colorScheme))
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(video.fileName)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color.hwText(colorScheme))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
+                Text("\(video.durationString) \u{00B7} \(video.fileSizeString)")
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.hwTextSecondary(colorScheme))
+
+                if video.state == .processing || video.state == .completed {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.hwSeparator(colorScheme).opacity(0.3))
+                                .frame(height: 3)
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Color.hwAccentGreen(colorScheme))
+                                .frame(width: geo.size.width * video.progress, height: 3)
+                        }
+                    }
+                    .frame(width: 72, height: 3)
+                    .padding(.top, 4)
+                }
+            }
+
+            Spacer()
+
+            Button {
+                videoManager.removeVideo(video)
+            } label: {
+                Text("\u{2715}")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(
+                        removeHovered && !videoManager.isProcessing
+                            ? Color.red.opacity(0.9)
+                            : Color.hwTextSecondary(colorScheme).opacity(0.6)
+                    )
+                    .frame(width: 18, height: 18)
+                    .background(
+                        removeHovered && !videoManager.isProcessing
+                            ? Color.red.opacity(0.15)
+                            : Color.hwSeparator(colorScheme).opacity(0.3)
+                    )
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(videoManager.isProcessing)
+            .onHover { hovering in
+                removeHovered = hovering
+            }
+            .animation(.easeInOut(duration: 0.15), value: removeHovered)
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 8)
+        .background(Color.hwAccentGreen(colorScheme).opacity(0.08))
+        .cornerRadius(7)
+        .overlay(
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color.hwAccentGreen(colorScheme).opacity(0.15), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Add Videos Button with Hover
+struct AddVideosButtonView: View {
+    let isProcessing: Bool
+    let action: () -> Void
+    
+    @Environment(\.colorScheme) var colorScheme
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button {
+            action()
+        } label: {
+            HStack(spacing: 5) {
+                Text("+")
+                    .font(.system(size: 14, weight: .medium))
+                Text("Add Videos")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundColor(
+                isHovered 
+                    ? Color.hwAccentGreen(colorScheme)
+                    : Color.hwAccentGreen(colorScheme).opacity(0.8)
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 32)
+            .background(
+                isHovered 
+                    ? Color.hwAccentGreen(colorScheme).opacity(0.08)
+                    : Color.clear
+            )
+            .cornerRadius(7)
+            .overlay(
+                RoundedRectangle(cornerRadius: 7)
+                    .stroke(
+                        Color.hwAccentGreen(colorScheme).opacity(isHovered ? 0.7 : 0.45),
+                        style: StrokeStyle(lineWidth: isHovered ? 2 : 1.5, dash: [5, 3])
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isProcessing)
+        .onHover { hovering in
+            isHovered = hovering && !isProcessing
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
+    }
+}
+
 // MARK: - Editable Stepper Field
 
 struct EditableStepperField: View {
@@ -567,9 +469,13 @@ struct EditableStepperField: View {
     let range: ClosedRange<Int>
     let unit: String?
     let disabled: Bool
+    
+    @Environment(\.colorScheme) var colorScheme
 
     @State private var textValue: String = ""
     @FocusState private var isFocused: Bool
+    @State private var minusHovered = false
+    @State private var plusHovered = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -579,23 +485,35 @@ struct EditableStepperField: View {
             } label: {
                 Text("\u{2212}")
                     .font(.system(size: 15))
-                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                    .foregroundColor(
+                        minusHovered && !disabled
+                            ? Color.hwAccentGreen(colorScheme)
+                            : Color.hwTextSecondary(colorScheme)
+                    )
                     .frame(width: 30, height: 34)
-                    .background(Color(nsColor: .separatorColor).opacity(0.3))
+                    .background(
+                        minusHovered && !disabled
+                            ? Color.hwAccentGreen(colorScheme).opacity(0.12)
+                            : Color.hwSeparator(colorScheme).opacity(0.2)
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(disabled)
+            .onHover { hovering in
+                minusHovered = hovering
+            }
+            .animation(.easeInOut(duration: 0.15), value: minusHovered)
 
             Rectangle()
-                .fill(Color(nsColor: .separatorColor))
+                .fill(Color.hwSeparator(colorScheme))
                 .frame(width: 1, height: 34)
 
             TextField("", text: $textValue)
                 .textFieldStyle(.plain)
                 .multilineTextAlignment(.center)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(Color(nsColor: .labelColor))
+                .foregroundColor(Color.hwText(colorScheme))
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
                 .focused($isFocused)
@@ -608,12 +526,12 @@ struct EditableStepperField: View {
             if let unit = unit {
                 Text(unit)
                     .font(.system(size: 11))
-                    .foregroundColor(Color(nsColor: .tertiaryLabelColor))
+                    .foregroundColor(Color.hwTextSecondary(colorScheme).opacity(0.6))
                     .padding(.trailing, 7)
             }
 
             Rectangle()
-                .fill(Color(nsColor: .separatorColor))
+                .fill(Color.hwSeparator(colorScheme))
                 .frame(width: 1, height: 34)
 
             Button {
@@ -622,20 +540,32 @@ struct EditableStepperField: View {
             } label: {
                 Text("+")
                     .font(.system(size: 15))
-                    .foregroundColor(Color(nsColor: .secondaryLabelColor))
+                    .foregroundColor(
+                        plusHovered && !disabled
+                            ? Color.hwAccentGreen(colorScheme)
+                            : Color.hwTextSecondary(colorScheme)
+                    )
                     .frame(width: 30, height: 34)
-                    .background(Color(nsColor: .separatorColor).opacity(0.3))
+                    .background(
+                        plusHovered && !disabled
+                            ? Color.hwAccentGreen(colorScheme).opacity(0.12)
+                            : Color.hwSeparator(colorScheme).opacity(0.2)
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(disabled)
+            .onHover { hovering in
+                plusHovered = hovering
+            }
+            .animation(.easeInOut(duration: 0.15), value: plusHovered)
         }
         .frame(height: 34)
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(Color.hwBackgroundDeep(colorScheme))
         .cornerRadius(7)
         .overlay(
             RoundedRectangle(cornerRadius: 7)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                .stroke(Color.hwSeparator(colorScheme), lineWidth: 1)
         )
         .onAppear { textValue = "\(value)" }
         .onChange(of: value) { newVal in
@@ -648,6 +578,50 @@ struct EditableStepperField: View {
             value = min(max(parsed, range.lowerBound), range.upperBound)
         }
         textValue = "\(value)"
+    }
+}
+
+// MARK: - Change Button with Hover
+struct ChangeButtonView: View {
+    let isProcessing: Bool
+    let action: () -> Void
+    
+    @Environment(\.colorScheme) var colorScheme
+    @State private var isHovered = false
+    
+    var body: some View {
+        Button("Change") {
+            action()
+        }
+        .font(.system(size: 12))
+        .foregroundColor(
+            isHovered
+                ? Color.hwAccentGreen(colorScheme)
+                : Color.hwTextSecondary(colorScheme)
+        )
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(
+            isHovered
+                ? Color.hwAccentGreen(colorScheme).opacity(0.08)
+                : Color.hwBackgroundDeep(colorScheme)
+        )
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(
+                    isHovered
+                        ? Color.hwAccentGreen(colorScheme)
+                        : Color.hwSeparator(colorScheme),
+                    lineWidth: 1
+                )
+        )
+        .buttonStyle(.plain)
+        .disabled(isProcessing)
+        .onHover { hovering in
+            isHovered = hovering && !isProcessing
+        }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 }
 

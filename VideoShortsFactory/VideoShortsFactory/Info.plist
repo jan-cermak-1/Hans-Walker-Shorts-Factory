@@ -42,5 +42,7 @@
 			<string>Alternate</string>
 		</dict>
 	</array>
+	<key>ATSApplicationFontsPath</key>
+	<string>.</string>
 </dict>
 </plist>

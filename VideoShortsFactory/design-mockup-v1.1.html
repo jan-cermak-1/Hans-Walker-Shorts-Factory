@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hans Walker · Shorts Factory — Design Mockup v1.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Krona+One&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body {
+    background: #e8e8e8;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 40px 24px;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Helvetica Neue', sans-serif;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .col { display: flex; flex-direction: column; gap: 12px; align-items: center; }
+  .col-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: rgba(0,0,0,0.4); font-weight: 600;
+  }
+
+  /* ===================== WINDOW BASE ===================== */
+  .window {
+    width: 520px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.24), 0 0 0 1px rgba(0,0,0,0.12);
+  }
+
+  /* ===================== LIGHT MODE ===================== */
+  .light { background: #F4EFE4; }
+  
+  /* Header with logo */
+  .light .header {
+    background: linear-gradient(180deg, #2C1F14 0%, #1a1108 100%);
+    padding: 20px 20px 16px;
+    border-bottom: 3px solid #5EC48A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .light .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .light .logo-svg {
+    width: 48px;
+    height: 48px;
+    color: #F4EFE4;
+  }
+  
+  .light .app-title {
+    font-family: 'Krona One', sans-serif;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #F4EFE4;
+    line-height: 1.2;
+  }
+  
+  .light .app-subtitle {
+    font-size: 10px;
+    color: #5EC48A;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+
+  .light .content { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  
+  .light .card {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid rgba(44,31,20,0.09);
+    box-shadow: 0 1px 3px rgba(44,31,20,0.05);
+    overflow: hidden;
+  }
+  
+  .light .card-header {
+    padding: 9px 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(44,31,20,0.02);
+    border-bottom: 1px solid rgba(44,31,20,0.07);
+  }
+  
+  .light .card-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(44,31,20,0.82);
+  }
+  
+  .light .card-body { padding: 12px 13px; }
+  
+  .light .badge {
+    width: 20px;
+    height: 20px;
+    background: #5EC48A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .light .field-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: rgba(44,31,20,0.42);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  
+  .light .stepper {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(44,31,20,0.18);
+    border-radius: 7px;
+    height: 34px;
+    overflow: hidden;
+    background: white;
+  }
+  
+  .light .stepper-btn {
+    width: 30px;
+    height: 100%;
+    background: rgba(44,31,20,0.04);
+    border: none;
+    color: rgba(44,31,20,0.58);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .light .stepper-btn:hover { background: rgba(44,31,20,0.09); }
+  .light .stepper-sep { width: 1px; height: 100%; background: rgba(44,31,20,0.1); }
+  
+  .light .stepper-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(44,31,20,0.85);
+    outline: none;
+    font-family: inherit;
+  }
+  
+  .light .stepper-unit {
+    font-size: 11px;
+    color: rgba(44,31,20,0.35);
+    padding-right: 7px;
+  }
+  
+  .light .text-field {
+    height: 34px;
+    background: white;
+    border: 1px solid rgba(44,31,20,0.18);
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: rgba(44,31,20,0.82);
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  
+  .light .text-field:focus {
+    border-color: #5EC48A;
+    box-shadow: 0 0 0 3px rgba(94,196,138,0.15);
+  }
+  
+  .light .text-field::placeholder { color: rgba(44,31,20,0.28); }
+  
+  .light .output-path-text {
+    font-size: 13px;
+    color: rgba(44,31,20,0.75);
+  }
+  
+  .light .output-meta {
+    font-size: 11px;
+    color: rgba(44,31,20,0.42);
+    margin-top: 2px;
+  }
+  
+  .light .change-btn {
+    background: white;
+    border: 1px solid rgba(44,31,20,0.2);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: rgba(44,31,20,0.65);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  
+  .light .start-btn {
+    width: 100%;
+    height: 46px;
+    background: #5EC48A;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Krona One', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #2C1F14;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 
+      0 6px 0 #3aad73,
+      0 9px 24px rgba(94,196,138,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.3),
+      inset 0 -2px 0 rgba(0,0,0,0.08);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  
+  .light .start-btn:hover {
+    transform: translateY(-2px);
+    background: #6ed49a;
+    box-shadow: 
+      0 8px 0 #3aad73,
+      0 12px 28px rgba(94,196,138,0.42),
+      inset 0 1px 0 rgba(255,255,255,0.32),
+      inset 0 -2px 0 rgba(0,0,0,0.08);
+  }
+  
+  .light .start-btn:active {
+    transform: translateY(4px);
+    box-shadow: 
+      0 2px 0 #3aad73,
+      0 2px 8px rgba(94,196,138,0.2),
+      inset 0 2px 4px rgba(0,0,0,0.15);
+  }
+  
+  .light .start-btn.disabled {
+    background: rgba(44,31,20,0.12);
+    color: rgba(44,31,20,0.32);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  .light .hint {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(44,31,20,0.38);
+    margin-top: 4px;
+  }
+  
+  .light .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0 12px;
+    gap: 5px;
+  }
+  
+  .light .empty-icon {
+    font-size: 32px;
+    opacity: 0.25;
+  }
+  
+  .light .empty-text {
+    font-size: 12px;
+    color: rgba(44,31,20,0.42);
+  }
+  
+  .light .add-btn {
+    width: 100%;
+    height: 32px;
+    background: white;
+    border: 1.5px dashed rgba(94,196,138,0.45);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #5EC48A;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  
+  .light .video-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 9px;
+    background: rgba(94,196,138,0.08);
+    border-radius: 7px;
+    border: 1px solid rgba(94,196,138,0.15);
+  }
+  
+  .light .video-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(44,31,20,0.82);
+  }
+  
+  .light .video-sub {
+    font-size: 11px;
+    color: rgba(44,31,20,0.42);
+    margin-top: 1px;
+  }
+  
+  .light .rm-btn {
+    width: 18px;
+    height: 18px;
+    background: rgba(44,31,20,0.08);
+    border: none;
+    border-radius: 50%;
+    font-size: 10px;
+    color: rgba(44,31,20,0.45);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .light .footer {
+    padding: 12px 16px;
+    background: rgba(44,31,20,0.03);
+    border-top: 1px solid rgba(44,31,20,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .light .footer-link {
+    font-size: 10px;
+    color: rgba(44,31,20,0.48);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .light .footer-link:hover {
+    color: #5EC48A;
+  }
+
+  /* ===================== DARK MODE ===================== */
+  .dark { background: #1e1e22; }
+  
+  .dark .header {
+    background: linear-gradient(180deg, #0e0906 0%, #08060 100%);
+    padding: 20px 20px 16px;
+    border-bottom: 3px solid #4EC98A;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .dark .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .dark .logo-svg {
+    width: 48px;
+    height: 48px;
+    color: #EDE4D0;
+  }
+  
+  .dark .app-title {
+    font-family: 'Krona One', sans-serif;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #EDE4D0;
+    line-height: 1.2;
+  }
+  
+  .dark .app-subtitle {
+    font-size: 10px;
+    color: #4EC98A;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-top: -2px;
+  }
+
+  .dark .content { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  
+  .dark .card {
+    background: #2c2c30;
+    border-radius: 10px;
+    border: 1px solid rgba(237,228,208,0.08);
+    overflow: hidden;
+  }
+  
+  .dark .card-header {
+    padding: 9px 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(237,228,208,0.03);
+    border-bottom: 1px solid rgba(237,228,208,0.07);
+  }
+  
+  .dark .card-header h2 {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(237,228,208,0.85);
+  }
+  
+  .dark .card-body { padding: 12px 13px; }
+  
+  .dark .badge {
+    width: 20px;
+    height: 20px;
+    background: #4EC98A;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .dark .field-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: rgba(237,228,208,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  
+  .dark .stepper {
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(237,228,208,0.14);
+    border-radius: 7px;
+    height: 34px;
+    overflow: hidden;
+    background: rgba(237,228,208,0.05);
+  }
+  
+  .dark .stepper-btn {
+    width: 30px;
+    height: 100%;
+    background: rgba(237,228,208,0.06);
+    border: none;
+    color: rgba(237,228,208,0.58);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .dark .stepper-btn:hover {
+    background: rgba(237,228,208,0.12);
+    color: white;
+  }
+  
+  .dark .stepper-sep { width: 1px; height: 100%; background: rgba(237,228,208,0.12); }
+  
+  .dark .stepper-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(237,228,208,0.9);
+    outline: none;
+    font-family: inherit;
+  }
+  
+  .dark .stepper-unit {
+    font-size: 11px;
+    color: rgba(237,228,208,0.32);
+    padding-right: 7px;
+  }
+  
+  .dark .text-field {
+    height: 34px;
+    background: rgba(237,228,208,0.06);
+    border: 1px solid rgba(237,228,208,0.14);
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: rgba(237,228,208,0.85);
+    outline: none;
+    width: 100%;
+    font-family: inherit;
+  }
+  
+  .dark .text-field:focus {
+    border-color: #4EC98A;
+    box-shadow: 0 0 0 3px rgba(78,201,138,0.2);
+  }
+  
+  .dark .text-field::placeholder { color: rgba(237,228,208,0.24); }
+  
+  .dark .output-path-text {
+    font-size: 13px;
+    color: rgba(237,228,208,0.75);
+  }
+  
+  .dark .output-meta {
+    font-size: 11px;
+    color: rgba(237,228,208,0.35);
+    margin-top: 2px;
+  }
+  
+  .dark .change-btn {
+    background: rgba(237,228,208,0.08);
+    border: 1px solid rgba(237,228,208,0.14);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: rgba(237,228,208,0.62);
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+  
+  .dark .start-btn {
+    width: 100%;
+    height: 46px;
+    background: #4EC98A;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Krona One', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #0e0906;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 
+      0 6px 0 #2a8a58,
+      0 9px 24px rgba(78,201,138,0.32),
+      inset 0 1px 0 rgba(255,255,255,0.25),
+      inset 0 -2px 0 rgba(0,0,0,0.12);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  
+  .dark .start-btn:hover {
+    transform: translateY(-2px);
+    background: #5ed99a;
+    box-shadow: 
+      0 8px 0 #2a8a58,
+      0 12px 28px rgba(78,201,138,0.38),
+      inset 0 1px 0 rgba(255,255,255,0.28),
+      inset 0 -2px 0 rgba(0,0,0,0.12);
+  }
+  
+  .dark .start-btn:active {
+    transform: translateY(4px);
+    box-shadow: 
+      0 2px 0 #2a8a58,
+      0 2px 8px rgba(78,201,138,0.2),
+      inset 0 2px 4px rgba(0,0,0,0.2);
+  }
+  
+  .dark .start-btn.disabled {
+    background: rgba(237,228,208,0.1);
+    color: rgba(237,228,208,0.28);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  
+  .dark .hint {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(237,228,208,0.32);
+    margin-top: 4px;
+  }
+  
+  .dark .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0 12px;
+    gap: 5px;
+  }
+  
+  .dark .empty-icon {
+    font-size: 32px;
+    opacity: 0.2;
+  }
+  
+  .dark .empty-text {
+    font-size: 12px;
+    color: rgba(237,228,208,0.35);
+  }
+  
+  .dark .add-btn {
+    width: 100%;
+    height: 32px;
+    background: transparent;
+    border: 1.5px dashed rgba(78,201,138,0.45);
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4EC98A;
+    cursor: pointer;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+  }
+  
+  .dark .video-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 9px;
+    background: rgba(78,201,138,0.06);
+    border-radius: 7px;
+    border: 1px solid rgba(78,201,138,0.12);
+  }
+  
+  .dark .video-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(237,228,208,0.85);
+  }
+  
+  .dark .video-sub {
+    font-size: 11px;
+    color: rgba(237,228,208,0.38);
+    margin-top: 1px;
+  }
+  
+  .dark .rm-btn {
+    width: 18px;
+    height: 18px;
+    background: rgba(237,228,208,0.1);
+    border: none;
+    border-radius: 50%;
+    font-size: 10px;
+    color: rgba(237,228,208,0.42);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .dark .footer {
+    padding: 12px 16px;
+    background: rgba(237,228,208,0.02);
+    border-top: 1px solid rgba(237,228,208,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .dark .footer-link {
+    font-size: 10px;
+    color: rgba(237,228,208,0.42);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .dark .footer-link:hover {
+    color: #4EC98A;
+  }
+
+  /* Shared helpers */
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .full-width { grid-column: 1 / -1; }
+  .output-row { display: flex; align-items: center; gap: 10px; }
+  .video-info { flex: 1; }
+  .pmini { height: 3px; background: rgba(0,0,0,0.1); border-radius: 2px; margin-top: 4px; width: 72px; overflow: hidden; }
+  .pmini-fill { width: 100%; height: 100%; background: #5EC48A; }
+  .dark .pmini { background: rgba(255,255,255,0.12); }
+  .dark .pmini-fill { background: #4EC98A; }
+</style>
+</head>
+<body>
+
+<!-- ===== LIGHT MODE — Empty state ===== -->
+<div class="col">
+  <div class="col-label">☀️ Light Mode · Prázdný stav</div>
+  <div class="window light">
+    <!-- Header with logo -->
+    <div class="header">
+      <div class="logo-container">
+        <svg class="logo-svg" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M347.908 347.028C351.83 347.031 356.722 348.01 358.676 351.766C362.906 359.898 359.847 373.996 357.78 382.339C352.907 402.011 345.494 420.691 338.234 439.539C330.245 459.43 320.331 479.176 311.427 498.523C290.999 542.918 270.134 586.84 241.824 626.891C234.363 637.187 225.845 649.531 215.093 656.469C205.508 662.656 189.164 657.996 183.499 648.262C178.298 639.324 178.075 629.559 178.073 619.492C177.708 594.273 183.645 570.145 188.827 545.727C191.991 530.824 195.452 519.199 199.711 504.66C191.745 517.195 185.02 530.121 177.705 542.988C164.596 565.824 152.162 588.953 139.757 612.184C136.346 618.574 131.597 627.644 124.746 630.941C119.848 633.613 110.609 628.02 109.453 623.156C107.223 613.777 112.337 600.59 114.662 591.535C124.412 553.789 136.382 516.648 150.508 480.312C159.517 456.813 168.041 435.492 179.453 413.043C181.78 408.953 184.621 403.723 190.05 405.738C197.983 408.684 198.553 412.692 195.268 419.406C170.039 470.977 152.679 525.789 134.881 580.273L135.351 579.66C137.457 576.945 139.233 574.055 140.915 571.062C157.493 541.57 176.279 513.379 194.614 484.938L207.226 465.562C210.028 461.207 212.599 456.445 215.88 452.434C217.317 450.68 219.148 449.098 221.394 448.535C224.241 447.816 226.956 448.82 229.329 450.387C233.97 453.441 234.613 457.84 233.789 463.051C233.083 467.516 231.084 471.77 229.495 475.977C226.981 482.633 224.354 489.301 222.14 496.062C210.587 531.336 189.842 602.621 197.095 638.156C197.476 640.023 198.065 642.992 199.669 644.055C211.035 643.836 246.334 588.504 252.809 576.836C276.361 534.406 297.776 489.844 318.828 446.062C325.498 432.195 330.303 416.035 335.589 401.555C341.151 386.322 348.357 370.153 348.196 353.817C346.972 354.897 346.015 356.01 344.504 356.186C343.701 353.762 345.519 352.818 344.656 350.387C344.357 349.544 344.305 349.074 344.653 348.289C345.813 347.264 346.389 347.302 347.908 347.028Z" fill="currentColor"/></svg>
+        <div>
+          <div class="app-title">Shorts<br>Factory</div>
+          <div class="app-subtitle">Hans Walker</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="card">
+        <div class="card-header"><div class="badge">1</div><h2>Source Videos</h2></div>
+        <div class="card-body">
+          <div class="empty-state">
+            <div class="empty-icon">🎬</div>
+            <div class="empty-text">No videos added yet</div>
+          </div>
+          <button class="add-btn">+ Add Videos</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header"><div class="badge">2</div><h2>Clip Settings</h2></div>
+        <div class="card-body">
+          <div class="settings-grid">
+            <div>
+              <div class="field-label">Clips</div>
+              <div class="stepper">
+                <button class="stepper-btn">−</button>
+                <div class="stepper-sep"></div>
+                <input class="stepper-input" type="number" value="8" min="1" max="99">
+                <div class="stepper-sep"></div>
+                <button class="stepper-btn">+</button>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Duration</div>
+              <div class="stepper">
+                <button class="stepper-btn">−</button>
+                <div class="stepper-sep"></div>
+                <input class="stepper-input" type="number" value="34" min="5" max="300" style="max-width:42px">
+                <span class="stepper-unit">sec</span>
+                <div class="stepper-sep"></div>
+                <button class="stepper-btn">+</button>
+              </div>
+            </div>
+            <div class="full-width">
+              <div class="field-label">Title</div>
+              <input class="text-field" type="text" placeholder="Enter title…" value="">
+            </div>
+            <div class="full-width">
+              <div class="field-label">Tags</div>
+              <input class="text-field" type="text" placeholder="#shorts #fyp" value="">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header"><div class="badge">3</div><h2>Output</h2></div>
+        <div class="card-body">
+          <div class="output-row">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div class="output-path-text">No folder selected</div>
+            </div>
+            <button class="change-btn">Change</button>
+          </div>
+        </div>
+      </div>
+      
+      <button class="start-btn disabled">▶ Start Batch</button>
+      <div class="hint">ⓘ Add source videos to begin</div>
+    </div>
+    
+    <div class="footer">
+      <a href="https://www.youtube.com/@HansWalker.walking" class="footer-link" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        @HansWalker.walking
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DARK MODE — With video ===== -->
+<div class="col">
+  <div class="col-label">🌙 Dark Mode · S videem</div>
+  <div class="window dark">
+    <div class="header">
+      <div class="logo-container">
+        <svg class="logo-svg" viewBox="0 0 800 800" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M347.908 347.028C351.83 347.031 356.722 348.01 358.676 351.766C362.906 359.898 359.847 373.996 357.78 382.339C352.907 402.011 345.494 420.691 338.234 439.539C330.245 459.43 320.331 479.176 311.427 498.523C290.999 542.918 270.134 586.84 241.824 626.891C234.363 637.187 225.845 649.531 215.093 656.469C205.508 662.656 189.164 657.996 183.499 648.262C178.298 639.324 178.075 629.559 178.073 619.492C177.708 594.273 183.645 570.145 188.827 545.727C191.991 530.824 195.452 519.199 199.711 504.66C191.745 517.195 185.02 530.121 177.705 542.988C164.596 565.824 152.162 588.953 139.757 612.184C136.346 618.574 131.597 627.644 124.746 630.941C119.848 633.613 110.609 628.02 109.453 623.156C107.223 613.777 112.337 600.59 114.662 591.535C124.412 553.789 136.382 516.648 150.508 480.312C159.517 456.813 168.041 435.492 179.453 413.043C181.78 408.953 184.621 403.723 190.05 405.738C197.983 408.684 198.553 412.692 195.268 419.406C170.039 470.977 152.679 525.789 134.881 580.273L135.351 579.66C137.457 576.945 139.233 574.055 140.915 571.062C157.493 541.57 176.279 513.379 194.614 484.938L207.226 465.562C210.028 461.207 212.599 456.445 215.88 452.434C217.317 450.68 219.148 449.098 221.394 448.535C224.241 447.816 226.956 448.82 229.329 450.387C233.97 453.441 234.613 457.84 233.789 463.051C233.083 467.516 231.084 471.77 229.495 475.977C226.981 482.633 224.354 489.301 222.14 496.062C210.587 531.336 189.842 602.621 197.095 638.156C197.476 640.023 198.065 642.992 199.669 644.055C211.035 643.836 246.334 588.504 252.809 576.836C276.361 534.406 297.776 489.844 318.828 446.062C325.498 432.195 330.303 416.035 335.589 401.555C341.151 386.322 348.357 370.153 348.196 353.817C346.972 354.897 346.015 356.01 344.504 356.186C343.701 353.762 345.519 352.818 344.656 350.387C344.357 349.544 344.305 349.074 344.653 348.289C345.813 347.264 346.389 347.302 347.908 347.028Z" fill="currentColor"/></svg>
+        <div>
+          <div class="app-title">Shorts<br>Factory</div>
+          <div class="app-subtitle">Hans Walker</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="card">
+        <div class="card-header"><div class="badge">1</div><h2>Source Videos</h2></div>
+        <div class="card-body">
+          <div class="video-row">
+            <span style="font-size:22px">🎬</span>
+            <div class="video-info">
+              <div class="video-name">prague_walk.mp4</div>
+              <div class="video-sub">42:17 · 2.1 GB</div>
+              <div class="pmini"><div class="pmini-fill"></div></div>
+            </div>
+            <button class="rm-btn">✕</button>
+          </div>
+          <button class="add-btn">+ Add Videos</button>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header"><div class="badge">2</div><h2>Clip Settings</h2></div>
+        <div class="card-body">
+          <div class="settings-grid">
+            <div>
+              <div class="field-label">Clips</div>
+              <div class="stepper">
+                <button class="stepper-btn">−</button>
+                <div class="stepper-sep"></div>
+                <input class="stepper-input" type="number" value="12" min="1" max="99">
+                <div class="stepper-sep"></div>
+                <button class="stepper-btn">+</button>
+              </div>
+            </div>
+            <div>
+              <div class="field-label">Duration</div>
+              <div class="stepper">
+                <button class="stepper-btn">−</button>
+                <div class="stepper-sep"></div>
+                <input class="stepper-input" type="number" value="58" min="5" max="300" style="max-width:42px">
+                <span class="stepper-unit">sec</span>
+                <div class="stepper-sep"></div>
+                <button class="stepper-btn">+</button>
+              </div>
+            </div>
+            <div class="full-width">
+              <div class="field-label">Title</div>
+              <input class="text-field" type="text" value="Morning Walk in Prague">
+            </div>
+            <div class="full-width">
+              <div class="field-label">Tags</div>
+              <input class="text-field" type="text" value="#walking #hanswalker #shorts">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header"><div class="badge">3</div><h2>Output</h2></div>
+        <div class="card-body">
+          <div class="output-row">
+            <span style="font-size:20px">📁</span>
+            <div style="flex:1">
+              <div class="output-path-text">/Users/hanswalker/Desktop/Shorts</div>
+              <div class="output-meta">Available: 124 GB · Required: ~1.4 GB</div>
+            </div>
+            <button class="change-btn">Change</button>
+          </div>
+        </div>
+      </div>
+      
+      <button class="start-btn">▶ Start Batch</button>
+    </div>
+    
+    <div class="footer">
+      <a href="https://www.youtube.com/@HansWalker.walking" class="footer-link" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+        @HansWalker.walking
+      </a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
