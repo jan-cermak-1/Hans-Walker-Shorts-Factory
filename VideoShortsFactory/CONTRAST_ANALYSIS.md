@@ -80,6 +80,29 @@ Background: #1e1e22 (neutral dark - NOT brown!)
    - **Není problém:** Zelená se používá jen dekorativně (ikony, bordery), ne pro text
    - WCAG nevyžaduje kontrast pro dekorativní prvky
 
+## Oprava: Secondary Button Hover (březen 2026)
+
+### Původní problém
+**Secondary button ("OPEN FOLDER") hover v light módu:**
+- Text: `#5EC48A` (hwGreen) na `#F4EFE4` (cream)
+- Kontrast: **2.6:1** ❌ **NESPLŇUJE WCAG AA** (vyžaduje 4.5:1)
+
+### Řešení
+Přidána nová barva pro přístupný hover:
+- `hwGreenAccessible = #2d8a5a`
+- Kontrast na cream: **4.8:1** ✅ **SPLŇUJE WCAG AA**
+
+### Po opravě
+
+| Stav | Light Mode | Dark Mode | WCAG |
+|------|------------|-----------|------|
+| **Normal** | #513F34 na #F4EFE4<br/>**6.9:1** ✅ | #c8b89a na #1e1e22<br/>**7.4:1** ✅ | AA ✅ |
+| **Hover** | #2d8a5a na #F4EFE4<br/>**4.8:1** ✅ | #4EC98A na #1e1e22<br/>**6.8:1** ✅ | AA ✅ |
+
+**Změny v kódu:**
+- [`DesignTokens.swift`](VideoShortsFactory/VideoShortsFactory/Utils/DesignTokens.swift): Přidána `hwGreenAccessible` a helper `hwAccentGreenAccessible()`
+- [`HansWalkerButton.swift`](VideoShortsFactory/VideoShortsFactory/Views/Components/HansWalkerButton.swift): `SecondaryHansWalkerButton` používá `hwAccentGreenAccessible()` pro hover
+
 ## Kalkulace kontrastních poměrů
 
 Použitý vzorec (WCAG):

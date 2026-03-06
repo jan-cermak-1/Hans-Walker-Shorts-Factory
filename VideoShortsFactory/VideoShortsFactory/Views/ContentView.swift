@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import ObjectiveC
 
 struct ContentView: View {
     @StateObject private var videoManager = VideoManager()
@@ -40,6 +41,12 @@ struct ContentView: View {
         DispatchQueue.main.async {
             guard let window = NSApplication.shared.windows.first else { return }
             
+            // Vytvoř a nastav window delegate pro kontrolu resize
+            let delegate = FixedWidthWindowDelegate()
+            window.delegate = delegate
+            // Uložíme delegate do window, aby se neuvolnil z paměti
+            objc_setAssociatedObject(window, "windowDelegate", delegate, .OBJC_ASSOCIATION_RETAIN)
+            
             if let screen = window.screen ?? NSScreen.main {
                 let screenHeight = screen.visibleFrame.height
                 let idealHeight: CGFloat = 840
@@ -48,7 +55,7 @@ struct ContentView: View {
                 // Použij 840px nebo 90% výšky obrazovky (co je menší)
                 let targetHeight = min(idealHeight, maxHeight)
                 
-                // Nastav velikost okna
+                // Nastav velikost okna s fixní šířkou 540px
                 var frame = window.frame
                 frame.size.height = targetHeight
                 frame.size.width = 540
@@ -56,6 +63,11 @@ struct ContentView: View {
                 // Vycentruj okno
                 window.setFrame(frame, display: true, animate: false)
                 window.center()
+                
+                // ZAKÁZAT horizontální resize - pouze vertikální
+                window.styleMask.insert(.resizable)
+                window.minSize = NSSize(width: 540, height: 520)
+                window.maxSize = NSSize(width: 540, height: CGFloat.greatestFiniteMagnitude)
             }
         }
     }
@@ -332,6 +344,16 @@ struct ContentView: View {
         for video in videoManager.videos {
             video.configuration = videoManager.globalConfiguration
         }
+    }
+}
+
+// MARK: - Fixed Width Window Delegate
+class FixedWidthWindowDelegate: NSObject, NSWindowDelegate {
+    private let fixedWidth: CGFloat = 540
+    
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        // Vždy vrať fixní šířku, ale povol změnu výšky
+        return NSSize(width: fixedWidth, height: frameSize.height)
     }
 }
 

@@ -160,7 +160,7 @@ struct SecondaryHansWalkerButton: View {
             }
             .foregroundColor(
                 isHovered 
-                    ? Color.hwAccentGreen(colorScheme)
+                    ? Color.hwAccentGreenAccessible(colorScheme)
                     : Color.hwTextSecondary(colorScheme)
             )
             .padding(.horizontal, 36)
@@ -173,14 +173,14 @@ struct SecondaryHansWalkerButton: View {
                 RoundedRectangle(cornerRadius: 100)
                     .stroke(
                         isHovered 
-                            ? Color.hwAccentGreen(colorScheme)
+                            ? Color.hwAccentGreenAccessible(colorScheme)
                             : Color.hwSeparator(colorScheme),
                         lineWidth: 1.5
                     )
             )
             .shadow(
                 color: isHovered 
-                    ? Color.hwAccentGreen(colorScheme).opacity(0.15)
+                    ? Color.hwAccentGreenAccessible(colorScheme).opacity(0.15)
                     : Color.clear,
                 radius: 16,
                 y: 4

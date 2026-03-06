@@ -5,7 +5,7 @@ struct HeaderView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header content
+            // Header content - extends into title bar area, centered
             HStack(spacing: 16) {
                 // Hans Walker Logo - switches based on color scheme
                 Image(colorScheme == .dark ? "hans-walker-logo-dark" : "hans-walker-logo")
@@ -15,13 +15,14 @@ struct HeaderView: View {
                 
                 // Title - single line
                 Text("SHORTS FACTORY")
-                    .font(.kronaOne(size: 13))
+                    .font(.kronaOne(size: 14))
                     .foregroundColor(Color.hwText(colorScheme))
-                    .tracking(2.6)
+                    .tracking(2.8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 14)
             .background(Color.hwBackgroundMid(colorScheme))
             
             // Bottom border

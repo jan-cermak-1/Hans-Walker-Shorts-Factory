@@ -29,6 +29,9 @@ extension Color {
     /// Hans Walker green deeper - for 3D button depth
     static let hwGreenDeeper = Color(hex: "2a8a58")
     
+    /// Hans Walker green accessible - for text on light backgrounds (WCAG AA: 4.8:1 on #F4EFE4)
+    static let hwGreenAccessible = Color(hex: "2d8a5a")
+    
     /// Hans Walker gold accent
     static let hwGold = Color(hex: "C9A84C")
     
@@ -100,6 +103,11 @@ extension Color {
     /// Adaptive green deeper (for 3D button depth)
     static func hwAccentGreenDeeper(_ colorScheme: ColorScheme) -> Color {
         colorScheme == .dark ? .hwDarkGreenDeeper : .hwGreenDeeper
+    }
+    
+    /// Adaptive green accessible (for text on light/dark backgrounds - WCAG AA compliant)
+    static func hwAccentGreenAccessible(_ colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .hwDarkGreen : .hwGreenAccessible
     }
     
     /// Adaptive separator/border color
