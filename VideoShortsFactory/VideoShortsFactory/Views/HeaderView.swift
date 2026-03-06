@@ -6,23 +6,23 @@ struct HeaderView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header content - extends into title bar area, centered
-            HStack(spacing: 16) {
+            HStack(spacing: 20) {
                 // Hans Walker Logo - switches based on color scheme
                 Image(colorScheme == .dark ? "hans-walker-logo-dark" : "hans-walker-logo")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 48)
+                    .frame(height: 56)
                 
                 // Title - single line
                 Text("SHORTS FACTORY")
-                    .font(.kronaOne(size: 14))
+                    .font(.kronaOne(size: 16))
                     .foregroundColor(Color.hwText(colorScheme))
-                    .tracking(2.8)
+                    .tracking(3.2)
             }
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 14)
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 16)
             .background(Color.hwBackgroundMid(colorScheme))
             
             // Bottom border
