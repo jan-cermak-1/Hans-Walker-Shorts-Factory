@@ -1,3 +1,35 @@
+// Nav shadow on scroll
+const nav = document.querySelector('nav');
+const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 20);
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll(); // init
+
+// Mobile menu toggle
+const menuBtn = document.getElementById('navMenuBtn');
+const navMenu = document.getElementById('navMenu');
+if (menuBtn && navMenu) {
+  const toggleMenu = () => {
+    const open = nav.classList.toggle('menu-open');
+    document.body.classList.toggle('menu-open', open);
+    menuBtn.setAttribute('aria-expanded', open);
+  };
+  menuBtn.addEventListener('click', toggleMenu);
+  navMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => {
+      nav.classList.remove('menu-open');
+      document.body.classList.remove('menu-open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    });
+  });
+  navMenu.addEventListener('click', (e) => {
+    if (e.target === navMenu) {
+      nav.classList.remove('menu-open');
+      document.body.classList.remove('menu-open');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
 // Theme toggle
 const themeBtn = document.getElementById('themeBtn');
 const root = document.documentElement;
