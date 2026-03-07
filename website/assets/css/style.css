@@ -106,7 +106,7 @@ nav {
 }
 .nav-logo:hover { opacity: 0.7; }
 .nav-logo svg {
-  height: 56px; width: auto; display: block;
+  height: 80px; width: auto; display: block;
   transition: color 0.4s;
 }
 [data-theme="dark"] .nav-logo svg { color: var(--ink); }
