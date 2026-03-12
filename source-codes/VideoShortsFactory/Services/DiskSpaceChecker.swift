@@ -85,14 +85,10 @@ class DiskSpaceChecker {
         
         switch checkAvailableSpace(at: outputURL) {
         case .success(let availableSpace):
-            if availableSpace < minimumRequiredSpace {
-                return (false, "Insufficient disk space. At least 5 GB required.")
-            }
-            
             if availableSpace < requiredSpace {
                 let available = formatBytes(availableSpace)
                 let required = formatBytes(requiredSpace)
-                return (false, "Not enough space. Available: \(available), Required: ~\(required)")
+                return (false, "Not enough disk space.\n\nAvailable: \(available)\nRequired: ~\(required)")
             }
             
             return (true, "Sufficient disk space available")

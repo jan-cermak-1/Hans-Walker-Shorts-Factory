@@ -12,6 +12,13 @@ class VideoManager: ObservableObject {
     @Published var currentOutputURL: URL?
     @Published var globalConfiguration: ClipConfiguration = ClipConfiguration()
     @Published var batchCompleted: Bool = false
+    @Published var errorAlert: AppError? = nil
+
+    struct AppError: Identifiable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
 
     private var isCancelled = false
     private var processingStartTime: Date?
@@ -98,12 +105,37 @@ class VideoManager: ObservableObject {
 
     func startBatchProcessing() {
         guard !isProcessing else { return }
-        guard !videos.isEmpty else { return }
-        guard let outputURL = globalConfiguration.outputFolder else { return }
+
+        guard !videos.isEmpty else {
+            errorAlert = AppError(
+                title: "No Videos Added",
+                message: "Please add at least one source video before starting the batch."
+            )
+            return
+        }
+
+        guard let outputURL = globalConfiguration.outputFolder else {
+            errorAlert = AppError(
+                title: "No Output Folder Selected",
+                message: "Please select an output folder in section 3 before starting the batch."
+            )
+            return
+        }
+
+        guard FFmpegService.shared.verifyFFmpegAvailability() else {
+            errorAlert = AppError(
+                title: "FFmpeg Not Found",
+                message: "The app requires FFmpeg to process videos but it could not be found.\n\nTry installing it via Homebrew:\nbrew install ffmpeg"
+            )
+            return
+        }
 
         let diskCheck = DiskSpaceChecker.shared.canProcessVideos(videos, at: outputURL)
         guard diskCheck.canProcess else {
-            print("Disk space check failed: \(diskCheck.message)")
+            errorAlert = AppError(
+                title: "Not Enough Disk Space",
+                message: diskCheck.message
+            )
             return
         }
 
@@ -237,6 +269,12 @@ class VideoManager: ObservableObject {
                     case .failure(let error):
                         video.state = .failed
                         video.errorMessage = error.localizedDescription
+                        DispatchQueue.main.async {
+                            self.errorAlert = AppError(
+                                title: "Processing Failed",
+                                message: "Could not process \"\(video.fileName)\".\n\nReason: \(error.localizedDescription)"
+                            )
+                        }
                         completion(false)
                     }
                 }
@@ -311,7 +349,9 @@ class VideoManager: ObservableObject {
 
     func openOutputFolder() {
         guard let outputURL = globalConfiguration.outputFolder else { return }
-        NSWorkspace.shared.open(outputURL)
+        let accessed = outputURL.startAccessingSecurityScopedResource()
+        NSWorkspace.shared.activateFileViewerSelecting([outputURL])
+        if accessed { outputURL.stopAccessingSecurityScopedResource() }
     }
 
     var estimatedTimeRemainingString: String {

@@ -35,6 +35,13 @@ struct ContentView: View {
             guard !videoManager.isProcessing else { return }
             openFilePicker()
         }
+        .alert(item: $videoManager.errorAlert) { error in
+            Alert(
+                title: Text(error.title),
+                message: Text(error.message),
+                dismissButton: .default(Text("OK"))
+            )
+        }
     }
     
     private func configureWindowSize() {

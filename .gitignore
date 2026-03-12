@@ -14,7 +14,11 @@ xcuserdata/
 
 # FFmpeg binary (too large for git)
 ffmpeg/
-VideoShortsFactory/VideoShortsFactory/Resources/ffmpeg
+source-codes/VideoShortsFactory/Resources/ffmpeg
+
+# App bundle (only ZIP is committed)
+app/*.app
+app/Hans\ Walker\ Shorts\ Factory.app
 
 # Cursor / IDE
 .cursor/
